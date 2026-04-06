@@ -1,0 +1,401 @@
+{
+  "schema": "etl",
+  "name": "usp_load_fact_inventory_receipt",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Date",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Employee",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Location",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Product",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_Inventory_Receipt",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Cumulative_Qty_Received",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "GR_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Outstanding",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_This_Receipt",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ReceiptDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Receipt_Completeness_Pct",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ReceivedBy_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Employees",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "EmployeeCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "EmployeeID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Items",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ItemCategory",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Vendors",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "VendorCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "GoodsReceiptLines",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "GRID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GRLineID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POLineID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "QuantityReceived",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "GoodsReceipts",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "GRID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GRNumber",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GRStatus",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ReceiptDate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ReceivedByID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "PurchaseOrderLines",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POLineID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "PurchaseOrders",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ExpectedDelivery",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PODate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PONumber",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "dd2e9e7f1cee7bc4a98b7d0e077c840ec8050bab810b2524c46589bea1640b6b",
+  "needs_enrich": true,
+  "mode": "deterministic",
+  "routing_reasons": []
+}

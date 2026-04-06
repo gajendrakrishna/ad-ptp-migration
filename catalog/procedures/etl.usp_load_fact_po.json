@@ -1,0 +1,383 @@
+{
+  "schema": "etl",
+  "name": "usp_load_fact_po",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Date",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Employee",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Product",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_PurchaseOrder",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Agreed_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Approval_Duration_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Approver_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Buyer_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Estimated_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PODate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Line_Number",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Requisition_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Employees",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "EmployeeCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "EmployeeID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Items",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ItemCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Vendors",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "VendorCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "PurchaseOrderLines",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "AgreedUnitPrice",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "LineNumber",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionLineID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "PurchaseOrders",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ApprovedByID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ExpectedDelivery",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "OrderedByID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PODate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PONumber",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "POStatus",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "RequisitionLines",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "EstimatedUnitPrice",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionLineID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "Requisitions",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "RequisitionDate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionNumber",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "dce162f0d7f1287372ca293368fe2f208018d1c64745bf9722241dd2b1ec90c9",
+  "needs_enrich": true,
+  "mode": "deterministic",
+  "routing_reasons": []
+}

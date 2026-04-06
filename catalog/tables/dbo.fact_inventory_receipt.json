@@ -1,0 +1,463 @@
+{
+  "schema": "dbo",
+  "name": "fact_inventory_receipt",
+  "columns": [
+    {
+      "name": "Fact_Receipt_SK",
+      "sql_type": "BIGINT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "GR_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ReceiptDate_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ExpectedDelivery_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Vendor_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Product_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Location_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ReceivedBy_Employee_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "GR_Status",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Quantity_Ordered",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Quantity_This_Receipt",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Cumulative_Qty_Received",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Quantity_Outstanding",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Receipt_Completeness_Pct",
+      "sql_type": "DECIMAL(5,2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Lead_Time_Days",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Delivery_Variance_Days",
+      "sql_type": "INT",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "DW_Load_DateTime",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Fact_Receipt",
+      "columns": [
+        "Fact_Receipt_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [
+    {
+      "constraint_name": "FK_FactGR_ExpDel",
+      "columns": [
+        "ExpectedDelivery_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactGR_Location",
+      "columns": [
+        "Location_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Location",
+      "referenced_columns": [
+        "Location_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactGR_Product",
+      "columns": [
+        "Product_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Product",
+      "referenced_columns": [
+        "Product_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactGR_RcvDate",
+      "columns": [
+        "ReceiptDate_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactGR_RcvdBy",
+      "columns": [
+        "ReceivedBy_Employee_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Employee",
+      "referenced_columns": [
+        "Employee_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactGR_Vendor",
+      "columns": [
+        "Vendor_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Vendor",
+      "referenced_columns": [
+        "Vendor_SK"
+      ]
+    }
+  ],
+  "auto_increment_columns": [
+    {
+      "column": "Fact_Receipt_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "2d18c7b0971fd1d227e0e63833e871d4c87ca5cad9d5a703386ccee4377190d1",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_inventory_receipt",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Cumulative_Qty_Received",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "GR_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Outstanding",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_This_Receipt",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ReceiptDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Receipt_Completeness_Pct",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ReceivedBy_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_dlvy_variance_days",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Cumulative_Qty_Received",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Outstanding",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_This_Receipt",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ReceiptDate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Receipt_Completeness_Pct",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_proc_perf_summary",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Outstanding",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_This_Receipt",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ReceiptDate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Receipt_Completeness_Pct",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}

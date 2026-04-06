@@ -1,0 +1,337 @@
+{
+  "schema": "etl",
+  "name": "usp_load_fact_requisition",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Date",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Employee",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Product",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_Requisition",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Approval_Duration_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Approver_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Estimated_Line_Total",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Estimated_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Approved",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Converted_To_PO",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Rejected",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Requested",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Requestor_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "RequiredByDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "RequisitionDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "RequisitionLine_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Requisition_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Requisition_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "SuggestedVendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Employees",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "EmployeeCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "EmployeeID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Items",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ItemCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Vendors",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "VendorCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "RequisitionLines",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "EstimatedUnitPrice",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ItemID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionLineID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "SuggestedVendorID",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "Purchasing",
+          "name": "Requisitions",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ApprovedByID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequestedByID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequiredByDate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionDate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionNumber",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "RequisitionStatus",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "UpdatedAt",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "3cdea8c49bc4ae8d7ddb521c785b3d38b2cab6bf9ab07197dd9f131386bd754d",
+  "needs_enrich": true,
+  "mode": "deterministic",
+  "routing_reasons": []
+}

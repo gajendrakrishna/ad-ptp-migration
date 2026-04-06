@@ -1,0 +1,130 @@
+{
+  "schema": "rpt",
+  "name": "vw_dlvy_variance_days",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Date",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FullDate",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Location",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "LocationName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_Inventory_Receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Cumulative_Qty_Received",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Outstanding",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_This_Receipt",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ReceiptDate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Receipt_Completeness_Pct",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "2d38dff05ee6e81a99f67ce071b560ad00c0bc7339b13934ff7d8dfbefb3f10d",
+  "mode": "deterministic",
+  "routing_reasons": []
+}

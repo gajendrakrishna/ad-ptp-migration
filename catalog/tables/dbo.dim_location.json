@@ -1,0 +1,172 @@
+{
+  "schema": "dbo",
+  "name": "dim_location",
+  "columns": [
+    {
+      "name": "Location_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "Location_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "LocationName",
+      "sql_type": "NVARCHAR(100)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "LocationType",
+      "sql_type": "VARCHAR(30)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "AddressLine1",
+      "sql_type": "NVARCHAR(200)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "City",
+      "sql_type": "NVARCHAR(100)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "StateProvince",
+      "sql_type": "VARCHAR(50)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "Country",
+      "sql_type": "NVARCHAR(100)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveStart",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveEnd",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsCurrent",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DW_InsertDate",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Dim_Location",
+      "columns": [
+        "Location_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [],
+  "auto_increment_columns": [
+    {
+      "column": "Location_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "1f231b87132862f14d60e1c3ade3f3e0dc7f423472f0a8754901d504da90a8f4",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_inventory_receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_dlvy_variance_days",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "LocationName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "LocationName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Location_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "schema": "rpt",
+  "name": "vw_proc_perf_summary",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "VendorName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_AP_Invoice",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Invoice_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_Inventory_Receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Delivery_Variance_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GR_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Lead_Time_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_PurchaseOrder",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Fact_PO_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "a453e49b28ee685df5c2700d3fcf301cb728792a08b351a6b479fa8294436045",
+  "mode": "deterministic",
+  "routing_reasons": []
+}

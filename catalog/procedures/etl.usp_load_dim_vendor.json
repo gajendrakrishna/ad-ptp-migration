@@ -1,0 +1,152 @@
+{
+  "schema": "etl",
+  "name": "usp_load_dim_vendor",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "City",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ContactName",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Country",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "DW_InsertDate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "DW_UpdateDate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveEnd",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveStart",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "PaymentTerms",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "SourceRowHash",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "TaxID",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "VendorName",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "VendorStatus",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_BK",
+              "is_selected": true,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Vendors",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "City",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ContactName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Country",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PaymentTerms",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "TaxID",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "VendorStatus",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "5e97986f664d55e9c93de69204f370803b064e4fbe9553ee94a3a3a0d015b023",
+  "mode": "deterministic",
+  "routing_reasons": []
+}

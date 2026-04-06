@@ -1,0 +1,473 @@
+{
+  "schema": "dbo",
+  "name": "fact_purchaseorder",
+  "columns": [
+    {
+      "name": "Fact_PO_SK",
+      "sql_type": "BIGINT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "PO_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_Line_Number",
+      "sql_type": "SMALLINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Requisition_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "PODate_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ExpectedDelivery_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Vendor_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Product_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Buyer_Employee_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Approver_Employee_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_Status",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Quantity_Ordered",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Agreed_Unit_Price",
+      "sql_type": "DECIMAL(18,4)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_Line_Total",
+      "sql_type": "DECIMAL(18,2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Estimated_Unit_Price",
+      "sql_type": "DECIMAL(18,4)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "Price_Savings_vs_Estimate",
+      "sql_type": "DECIMAL(18,2)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "Approval_Duration_Days",
+      "sql_type": "INT",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "DW_Load_DateTime",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Fact_PO",
+      "columns": [
+        "Fact_PO_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [
+    {
+      "constraint_name": "FK_FactPO_Approver",
+      "columns": [
+        "Approver_Employee_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Employee",
+      "referenced_columns": [
+        "Employee_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactPO_Buyer",
+      "columns": [
+        "Buyer_Employee_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Employee",
+      "referenced_columns": [
+        "Employee_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactPO_ExpDel",
+      "columns": [
+        "ExpectedDelivery_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactPO_PODate",
+      "columns": [
+        "PODate_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactPO_Product",
+      "columns": [
+        "Product_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Product",
+      "referenced_columns": [
+        "Product_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactPO_Vendor",
+      "columns": [
+        "Vendor_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Vendor",
+      "referenced_columns": [
+        "Vendor_SK"
+      ]
+    }
+  ],
+  "auto_increment_columns": [
+    {
+      "column": "Fact_PO_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "0ddb4c6ceb724b73184dbbf6a62df40aeb53bbbe4183296f38b2816b1327a6e6",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_po",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Agreed_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Approval_Duration_Days",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Approver_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Buyer_Employee_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Estimated_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PODate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Line_Number",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Requisition_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_one_req_2_pos",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Approval_Duration_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Requisition_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_proc_perf_summary",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Fact_PO_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Agreed_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Approval_Duration_Days",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Buyer_Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Estimated_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ExpectedDelivery_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PODate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Number",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Savings_vs_Estimate",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Ordered",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Requisition_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}

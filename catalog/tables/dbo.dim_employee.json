@@ -1,0 +1,263 @@
+{
+  "schema": "dbo",
+  "name": "dim_employee",
+  "columns": [
+    {
+      "name": "Employee_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "Employee_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "FullName",
+      "sql_type": "NVARCHAR(100)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Email",
+      "sql_type": "NVARCHAR(150)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Department",
+      "sql_type": "NVARCHAR(50)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "JobTitle",
+      "sql_type": "NVARCHAR(100)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsActive",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveStart",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveEnd",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsCurrent",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DW_InsertDate",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "SourceRowHash",
+      "sql_type": "VARBINARY(32)",
+      "is_nullable": true,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Dim_Employee",
+      "columns": [
+        "Employee_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [],
+  "auto_increment_columns": [
+    {
+      "column": "Employee_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "60f66a02a21f26bce7abf67283a04385ef711e77f474925f880638a2e56f7795",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_dim_employee",
+          "is_selected": true,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "DW_InsertDate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Department",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveEnd",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveStart",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Email",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "FullName",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsActive",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "JobTitle",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "SourceRowHash",
+              "is_selected": true,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_inventory_receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_po",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_requisition",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Employee_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FullName",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}
