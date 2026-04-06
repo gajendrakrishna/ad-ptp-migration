@@ -344,5 +344,10 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "resolved",
+    "selected_writer": "etl.usp_load_dim_product",
+    "selected_writer_rationale": "etl.usp_load_dim_product is the sole direct writer to dbo.Dim_Product, implementing SCD Type 2 via a two-phase UPDATE+INSERT pattern. All four other procedures that reference Dim_Product (usp_load_fact_ap_invoice, usp_load_fact_inventory_receipt, usp_load_fact_po, usp_load_fact_requisition) are read-only consumers joining on Product_BK/IsCurrent."
   }
 }

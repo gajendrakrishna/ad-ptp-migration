@@ -133,5 +133,63 @@
   },
   "ddl_hash": "c529546755d78f5bbac0bb6075e67492dc1d1ccb9ca605a09ab529cac1e38f53",
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; suppresses row-count messages. No transformation logic — dbt does not need this."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "sql": "DECLARE @Today AS DATE = CAST(GETDATE() AS DATE)",
+      "source": "llm",
+      "rationale": "Variable declaration for today's date. Replaced by dbt's current_date macro in the model."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "sql": "DECLARE @Expired AS INTEGER = 0, @Inserted AS INTEGER = 0",
+      "source": "llm",
+      "rationale": "Row-count counters used only for the diagnostic PRINT at the end. No equivalent needed in dbt."
+    },
+    {
+      "type": "Update",
+      "action": "migrate",
+      "sql": "UPDATE dw SET dw.EffectiveEnd = DATEADD(DAY, -1, @Today), dw.IsCurrent = 0 FROM dbo.Dim_Product AS dw INNER JOIN PTP_System.Master.Items AS src ON dw.Product_BK = src.ItemCode AND dw.IsCurrent = 1 WHERE dw.SourceRowHash <> HASHBYTES('SHA2_256', CONCAT_WS('|', src.ItemName, ISNULL(src.Description,''), src.UnitOfMeasure, src.ItemCategory, src.AccountingType, ISNULL(src.GLAccount,'')))",
+      "source": "llm",
+      "rationale": "Core SCD2 Phase 1 — expires rows whose tracked attributes have changed by comparing SourceRowHash. Must be represented in the dbt model as the expiry logic."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET @Expired = @@ROWCOUNT",
+      "source": "llm",
+      "rationale": "Captures expired row count for diagnostic logging only. No transformation value; not needed in dbt."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": "INSERT INTO dbo.Dim_Product (Product_BK, ProductName, Description, UnitOfMeasure, Category, AccountingType, GLAccount, EffectiveStart, EffectiveEnd, IsCurrent, DW_InsertDate, SourceRowHash) SELECT src.ItemCode, src.ItemName, ISNULL(src.Description,''), src.UnitOfMeasure, src.ItemCategory, src.AccountingType, ISNULL(src.GLAccount,'00000'), @Today, '9999-12-31', 1, SYSUTCDATETIME(), HASHBYTES('SHA2_256', CONCAT_WS('|', src.ItemName, ISNULL(src.Description,''), src.UnitOfMeasure, src.ItemCategory, src.AccountingType, ISNULL(src.GLAccount,''))) FROM PTP_System.Master.Items src WHERE NOT EXISTS (SELECT 1 FROM dbo.Dim_Product dw WHERE dw.Product_BK = src.ItemCode AND dw.IsCurrent = 1)",
+      "source": "llm",
+      "rationale": "Core SCD2 Phase 2 — inserts net-new items and re-versioned rows after expiry. Must become the primary SELECT in the dbt model."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET @Inserted = @@ROWCOUNT",
+      "source": "llm",
+      "rationale": "Captures inserted row count for diagnostic logging only. No transformation value; not needed in dbt."
+    },
+    {
+      "type": "Command",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Dim_Product: ', @Inserted, ' inserted, ', @Expired, ' expired.')",
+      "source": "llm",
+      "rationale": "Diagnostic log statement — operational overhead with no transformation logic. dbt handles observability separately."
+    }
+  ]
 }
