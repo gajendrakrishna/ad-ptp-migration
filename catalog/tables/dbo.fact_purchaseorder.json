@@ -469,5 +469,46 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "resolved",
+    "table": "dbo.fact_purchaseorder",
+    "selected_writer": "etl.usp_load_fact_po",
+    "writer_type": "direct",
+    "resolution_method": "auto_single",
+    "statements": [
+      {
+        "type": "TRUNCATE",
+        "action": "skip",
+        "reason": "Handled by dbt table materialization"
+      },
+      {
+        "type": "INSERT",
+        "action": "migrate",
+        "reason": "Core transformation: full-refresh load joining source PO/lines with dimension lookups and derived measures"
+      },
+      {
+        "type": "PRINT",
+        "action": "skip",
+        "reason": "Logging only"
+      }
+    ],
+    "logic_summary": "Full-refresh ETL that truncates and reloads dbo.Fact_PurchaseOrder. Joins PurchaseOrders and PurchaseOrderLines from source (PTP_System) to four conformed dimensions (Vendor, Product, Employee x2, Date x2) using SCD2 IsCurrent=1 lookups with ISNULL/-1/0 defaults for missing matches. Computes three derived measures: PO_Line_Total (qty * agreed price), Price_Savings_vs_Estimate (estimated minus agreed price * qty, nullable when no upstream requisition), and Approval_Duration_Days (DATEDIFF from requisition date to PO date, nullable). Maps cleanly to a dbt table model.",
+    "dbt_materialization": "table",
+    "source_objects": [
+      "PTP_System.Purchasing.PurchaseOrders",
+      "PTP_System.Purchasing.PurchaseOrderLines",
+      "PTP_System.Master.Vendors",
+      "PTP_System.Master.Items",
+      "PTP_System.Master.Employees",
+      "PTP_System.Purchasing.Requisitions",
+      "PTP_System.Purchasing.RequisitionLines"
+    ],
+    "dimension_refs": [
+      "dbo.Dim_Date",
+      "dbo.Dim_Vendor",
+      "dbo.Dim_Product",
+      "dbo.Dim_Employee"
+    ]
   }
 }
