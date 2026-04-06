@@ -379,5 +379,48 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "resolved",
+    "table": "dbo.dim_vendor",
+    "selected_writer": "etl.usp_load_dim_vendor",
+    "writer_type": "procedure",
+    "write_pattern": "scd2_expire_insert",
+    "source_objects": [
+      "PTP_System.Master.Vendors"
+    ],
+    "statements": [
+      {
+        "type": "UPDATE",
+        "target": "dbo.Dim_Vendor",
+        "description": "Phase 1: Expire changed rows by setting EffectiveEnd, IsCurrent=0 where SourceRowHash differs",
+        "action": "migrate"
+      },
+      {
+        "type": "INSERT",
+        "target": "dbo.Dim_Vendor",
+        "description": "Phase 2: Insert net-new BKs and re-insert newly expired rows with current attribute values and IsCurrent=1",
+        "action": "migrate"
+      },
+      {
+        "type": "PRINT",
+        "target": null,
+        "description": "Diagnostic row-count message",
+        "action": "skip"
+      }
+    ],
+    "tracked_attributes": [
+      "VendorName",
+      "ContactName",
+      "City",
+      "PaymentTerms",
+      "VendorStatus"
+    ],
+    "untracked_attributes": [
+      "Country",
+      "TaxID"
+    ],
+    "hash_algorithm": "SHA2_256",
+    "notes": "SCD Type 2 via two-phase expire+insert. Hash covers 5 attributes. Country and TaxID are loaded but not tracked for change detection."
   }
 }
