@@ -459,5 +459,45 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "table": "dbo.fact_inventory_receipt",
+    "selected_writer": "etl.usp_load_fact_inventory_receipt",
+    "status": "resolved",
+    "writer_analysis": {
+      "procedure": "etl.usp_load_fact_inventory_receipt",
+      "write_type": "direct",
+      "pattern": "truncate_insert",
+      "sources": [
+        "PTP_System.Purchasing.GoodsReceiptLines",
+        "PTP_System.Purchasing.GoodsReceipts",
+        "PTP_System.Purchasing.PurchaseOrderLines",
+        "PTP_System.Purchasing.PurchaseOrders",
+        "PTP_System.Master.Vendors",
+        "PTP_System.Master.Items",
+        "PTP_System.Master.Employees"
+      ],
+      "dimension_lookups": [
+        "dbo.Dim_Date",
+        "dbo.Dim_Vendor",
+        "dbo.Dim_Product",
+        "dbo.Dim_Employee",
+        "dbo.Dim_Location"
+      ],
+      "statements": [
+        {
+          "type": "TRUNCATE",
+          "action": "skip",
+          "note": "Handled by dbt full-refresh"
+        },
+        {
+          "type": "INSERT",
+          "action": "migrate",
+          "note": "Core transformation logic \u2014 all non-identity columns populated via CTE + main SELECT"
+        }
+      ],
+      "logic_summary": "Full reload via TRUNCATE + INSERT. CTE (GR_RunningTotal) computes per-PO-line running cumulative received quantity using SUM OVER window function ordered by ReceiptDate/GRID/GRLineID, filtered to Posted receipts. Main SELECT joins goods receipts, PO lines/headers, vendors, items, employees from PTP_System and resolves surrogate keys against DW dimensions with ISNULL defaults. Key derived measures: Lead_Time_Days (DATEDIFF PODate to ReceiptDate), Delivery_Variance_Days (DATEDIFF ExpectedDelivery to ReceiptDate, nullable when no expected date), Receipt_Completeness_Pct (cumulative/ordered*100), Quantity_Outstanding. Location surrogate resolved via rule-based CASE on ItemCategory (Office\u2192WH-SUPP-03, Hardware SWITCH\u2192WH-NET-04, Hardware\u2192WH-IT-02, else WH-CORP-01)."
+    },
+    "warnings": []
   }
 }
