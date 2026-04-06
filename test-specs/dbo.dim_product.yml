@@ -1,0 +1,857 @@
+unit_tests:
+- name: test_scd2_expire_and_reinsert
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P001
+      ItemName: Widget Pro
+      Description: Updated widget
+      UnitOfMeasure: EA
+      ItemCategory: GOODS
+      AccountingType: EXPENSE
+      GLAccount: '10100'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P001
+      ProductName: Widget
+      Description: Old desc
+      UnitOfMeasure: EA
+      Category: GOODS
+      AccountingType: EXPENSE
+      GLAccount: '10100'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+- name: test_scd2_no_change_no_action
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P002
+      ItemName: Bolt
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: HARDWARE
+      AccountingType: EXPENSE
+      GLAccount: '10200'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P002
+      ProductName: Bolt
+      Description: ''
+      UnitOfMeasure: EA
+      Category: HARDWARE
+      AccountingType: EXPENSE
+      GLAccount: '10200'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Product_SK: 1
+      Product_BK: P002
+      ProductName: Bolt
+      Description: ''
+      UnitOfMeasure: EA
+      Category: HARDWARE
+      AccountingType: EXPENSE
+      GLAccount: '10200'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: null
+    - Product_SK: 2
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 3
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 4
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 5
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 6
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 7
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 8
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+- name: test_scd2_new_product_inserted
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P003
+      ItemName: Gasket
+      Description: Standard gasket
+      UnitOfMeasure: EA
+      ItemCategory: PARTS
+      AccountingType: COGS
+      GLAccount: '20100'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows: []
+  expect:
+    rows:
+    - Product_SK: 9
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 10
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 11
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 12
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 13
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 14
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 15
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+    - Product_SK: 16
+      Product_BK: P003
+      ProductName: Gasket
+      Description: Standard gasket
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '20100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: f9bbfcf9b62095fe46ddd9fa00b463f5e8157aea6d96f13ecd70372437279382
+- name: test_scd2_null_description_handled
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P004
+      ItemName: Nozzle
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: PARTS
+      AccountingType: COGS
+      GLAccount: '20200'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows: []
+  expect:
+    rows:
+    - Product_SK: 17
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 18
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 19
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 20
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 21
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 22
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 23
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+    - Product_SK: 24
+      Product_BK: P004
+      ProductName: Nozzle
+      Description: ''
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '20200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 4a4cebd15aad74e59600fd0e11b024f88c728dc1d4e0f07e089f4a5be5bd20dc
+- name: test_scd2_null_glaccount_defaults
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P005
+      ItemName: Pipe
+      Description: Steel pipe
+      UnitOfMeasure: M
+      ItemCategory: MATERIAL
+      AccountingType: COGS
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows: []
+  expect:
+    rows:
+    - Product_SK: 25
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 26
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 27
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 28
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 29
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 30
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 31
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+    - Product_SK: 32
+      Product_BK: P005
+      ProductName: Pipe
+      Description: Steel pipe
+      UnitOfMeasure: M
+      Category: MATERIAL
+      AccountingType: COGS
+      GLAccount: '00000'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 6afb8a3873b7972340311aec48fa1607f7b372015e4a0fe15b6bc11564945603
+- name: test_scd2_empty_source_no_action
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows: []
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P006
+      ProductName: Valve
+      Description: ''
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '20300'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Product_SK: 33
+      Product_BK: P006
+      ProductName: Valve
+      Description: ''
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '20300'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: null
+    - Product_SK: 34
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 35
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 36
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 37
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 38
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 39
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 40
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:51'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+- name: test_scd2_phase1_null_description_in_hash
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P008
+      ItemName: Bracket
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: PARTS
+      AccountingType: COGS
+      GLAccount: '20400'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P008
+      ProductName: Bracket
+      Description: Old description
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '20400'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+- name: test_scd2_phase1_null_glaccount_in_hash
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P009
+      ItemName: Shaft
+      Description: Drive shaft
+      UnitOfMeasure: EA
+      ItemCategory: PARTS
+      AccountingType: COGS
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P009
+      ProductName: Shaft
+      Description: Drive shaft
+      UnitOfMeasure: EA
+      Category: PARTS
+      AccountingType: COGS
+      GLAccount: '99999'
+      EffectiveStart: '2024-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01 00:00:00'
+      SourceRowHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+- name: test_scd2_expired_row_gets_new_version
+  model: stg_dim_product
+  given:
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: P007
+      ItemName: Pump
+      Description: Water pump
+      UnitOfMeasure: EA
+      ItemCategory: EQUIPMENT
+      AccountingType: CAPEX
+      GLAccount: '30100'
+      IsActive: 1
+      CreatedAt: '1900-01-01'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: P007
+      ProductName: Pump
+      Description: Water pump
+      UnitOfMeasure: EA
+      Category: EQUIPMENT
+      AccountingType: CAPEX
+      GLAccount: '30100'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '2023-12-31'
+      IsCurrent: 0
+      DW_InsertDate: '2023-01-01 00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Product_SK: 41
+      Product_BK: P007
+      ProductName: Pump
+      Description: Water pump
+      UnitOfMeasure: EA
+      Category: EQUIPMENT
+      AccountingType: CAPEX
+      GLAccount: '30100'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '2023-12-31'
+      IsCurrent: false
+      DW_InsertDate: '2023-01-01 00:00:00'
+      SourceRowHash: null
+    - Product_SK: 42
+      Product_BK: ITM-LAPTOP-01
+      ProductName: Business Laptop 15"
+      Description: Dell Latitude 15" i7, 16GB RAM, 512GB SSD
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: fd7eedcd9e210f634fb2e12d16a8cd9be8581e0e95360f15eaf3f39d3d53a42f
+    - Product_SK: 43
+      Product_BK: ITM-MONITOR-27
+      ProductName: 27-Inch 4K Monitor
+      Description: LG UltraFine 27" 4K Display, USB-C
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: e8301d153da3168716354b6072d10ce9824bf11a92f9a9deab626420e7e19e46
+    - Product_SK: 44
+      Product_BK: ITM-PAPER-A4
+      ProductName: Copy Paper A4 (Ream)
+      Description: 80gsm A4, 500 sheets per ream
+      UnitOfMeasure: REAM
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: dc69352318de5e803ffbab3ccbc2446a3e5c5641dc5ee2c1558f039346596cfc
+    - Product_SK: 45
+      Product_BK: ITM-INK-BLK
+      ProductName: Printer Ink Cartridge - Black
+      Description: HP 65XL Black High-Yield Ink Cartridge
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: 162d9dc4c3066e4b04a38addd653fc8ae563f011a4e5d13979c77e5be230b540
+    - Product_SK: 46
+      Product_BK: ITM-SWITCH-24
+      ProductName: 24-Port Network Switch
+      Description: Cisco Catalyst C1000-24T Gigabit Switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18200'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: 8dfa996dcf0fb34a91051ac75e93575e26f6766b1bb8454596063606061a5b60
+    - Product_SK: 47
+      Product_BK: ITM-TONER-CLR
+      ProductName: Color Laser Toner Set
+      Description: HP LaserJet Pro 4-Pack Color Toner
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Expense
+      GLAccount: '62100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: 5f466a74c9a824c98765fda2c3818dcb2f54345442fe2998a2fb5811470e47c7
+    - Product_SK: 48
+      Product_BK: ITM-DESK-ADJ
+      ProductName: Height-Adjustable Desk
+      Description: Motorised sit-stand desk, 60"x30"
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Asset
+      GLAccount: '18300'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: 835c15478cb780ecf413ba9de977fa7c5784321fe114462f932c923b4a07ca99
+    - Product_SK: 49
+      Product_BK: P007
+      ProductName: Pump
+      Description: Water pump
+      UnitOfMeasure: EA
+      Category: EQUIPMENT
+      AccountingType: CAPEX
+      GLAccount: '30100'
+      EffectiveStart: '2026-04-06'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: true
+      DW_InsertDate: '2026-04-06 13:54:52'
+      SourceRowHash: de0d036b8113aa6f52b14ed124f40db271bfce7ea39e775062482e7ab3a12097
