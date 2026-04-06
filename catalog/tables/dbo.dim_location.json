@@ -168,5 +168,11 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "table": "dbo.dim_location",
+    "status": "no_writer_found",
+    "selected_writer": null,
+    "writers": []
   }
 }
