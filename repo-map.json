@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "project_type": "migration",
+  "primary_languages": [
+    "SQL"
+  ],
+  "key_directories": {
+    "ddl/": "Extracted DDL files from setup-ddl (tables.sql, procedures.sql, views.sql, functions.sql)",
+    "catalog/": "Catalog JSON files — tables/, procedures/, views/, functions/ subdirectories",
+    "dbt/": "dbt project (created by init-dbt)"
+  },
+  "notes_for_agents": {
+    "startup": "Read this file before exploring the project. It is the primary startup context for structure and conventions.",
+    "catalog_mandatory": "discover and scoping tools require catalog/ files from setup-ddl. Errors if catalog is missing.",
+    "ddl_filenames": "The loader auto-detects object types from CREATE statements — .sql filenames are not significant.",
+    "mssql_env_vars": "Live SQL Server access requires MSSQL_HOST, MSSQL_PORT, MSSQL_DB, SA_PASSWORD exported before launching claude."
+  }
+}

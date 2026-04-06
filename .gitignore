@@ -1,0 +1,30 @@
+# Staging files from setup-ddl (intermediate MCP query results)
+.staging/
+
+# Intermediate CLI-ready test spec JSON (committed artifact is .yml)
+test-specs/*.json
+
+# Batch command run metadata
+.migration-runs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
+.envrc
+
+# MCP server config (may contain credentials)
+.mcp.json
+
+# dbt build artifacts
+dbt/logs/
+dbt/target/
