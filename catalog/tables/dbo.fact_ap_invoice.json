@@ -600,5 +600,50 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "resolved",
+    "table": "dbo.fact_ap_invoice",
+    "selected_writer": "etl.usp_load_fact_ap_invoice",
+    "writer_type": "procedure",
+    "write_pattern": "truncate_insert",
+    "source_objects": [
+      "PTP_System.Finance.Invoices",
+      "PTP_System.Finance.InvoiceLines",
+      "PTP_System.Purchasing.PurchaseOrderLines",
+      "PTP_System.Purchasing.PurchaseOrders",
+      "PTP_System.Master.Vendors",
+      "PTP_System.Master.Items"
+    ],
+    "statements": [
+      {
+        "type": "TRUNCATE",
+        "target": "dbo.fact_ap_invoice",
+        "description": "Full-refresh truncate before reload",
+        "disposition": "migrate"
+      },
+      {
+        "type": "INSERT",
+        "target": "dbo.fact_ap_invoice",
+        "description": "Core transformation: joins invoice/line/PO source tables, resolves conformed dim SKs, derives price variance measures and boolean status flags",
+        "disposition": "migrate"
+      },
+      {
+        "type": "PRINT",
+        "target": null,
+        "description": "Diagnostic row-count message",
+        "disposition": "skip"
+      }
+    ],
+    "key_transformations": [
+      "Price_Variance = (InvoicedUnitPrice - AgreedUnitPrice) * QuantityBilled",
+      "Price_Variance_Pct: NULL-safe percentage variance (NULL when AgreedUnitPrice = 0)",
+      "Days_Until_Due = DATEDIFF(DAY, InvoiceDate, DueDate)",
+      "Days_Invoice_To_Receive = DATEDIFF(DAY, InvoiceDate, ReceivedDate)",
+      "Is_Match_Passed: derived from MatchStatus = 'Matched'",
+      "Is_Disputed: derived from InvoiceStatus = 'Disputed'",
+      "Is_Paid: derived from InvoiceStatus = 'Paid'"
+    ],
+    "notes": "Truncate-insert full-refresh pattern. Sources from PTP_System transactional tables; resolves surrogate keys via Dim_Date (yyyyMMdd INT cast), Dim_Vendor and Dim_Product (IsCurrent=1 lookup)."
   }
 }
