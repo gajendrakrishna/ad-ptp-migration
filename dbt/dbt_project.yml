@@ -1,0 +1,22 @@
+name: 'ad_ptp_migration'
+version: '1.0.0'
+config-version: 2
+
+profile: 'ad_ptp_migration'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  ad_ptp_migration:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
