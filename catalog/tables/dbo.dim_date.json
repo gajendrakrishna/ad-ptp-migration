@@ -250,5 +250,11 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "no_writer_found",
+    "selected_writer": null,
+    "warnings": [],
+    "errors": []
   }
 }
