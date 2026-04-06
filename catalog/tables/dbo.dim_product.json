@@ -349,5 +349,36 @@
     "status": "resolved",
     "selected_writer": "etl.usp_load_dim_product",
     "selected_writer_rationale": "etl.usp_load_dim_product is the sole direct writer to dbo.Dim_Product, implementing SCD Type 2 via a two-phase UPDATE+INSERT pattern. All four other procedures that reference Dim_Product (usp_load_fact_ap_invoice, usp_load_fact_inventory_receipt, usp_load_fact_po, usp_load_fact_requisition) are read-only consumers joining on Product_BK/IsCurrent."
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_dim_product",
+    "classification": {
+      "resolved_kind": "dim_scd2",
+      "source": "llm",
+      "rationale": "The writer proc implements a two-phase expire+reinsert pattern: Phase 1 sets IsCurrent=0 and EffectiveEnd=today-1 for hash-changed rows; Phase 2 inserts new versions with IsCurrent=1 and EffectiveEnd='9999-12-31'. Column shape confirms SCD2: EffectiveStart, EffectiveEnd, IsCurrent, and a surrogate PK alongside a separate business key Product_BK."
+    },
+    "primary_key": {
+      "columns": [
+        "Product_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Dim_Product on Product_SK, and auto_increment_columns confirms Product_SK is an identity column — a definitive surrogate key signal."
+    },
+    "natural_key": {
+      "columns": [
+        "Product_BK"
+      ],
+      "source": "llm",
+      "rationale": "Product_BK is used as the match column in both proc phases: the expire UPDATE joins on dw.Product_BK = src.ItemCode, and the insert NOT EXISTS guard filters on dw.Product_BK = src.ItemCode, establishing it as the business key."
+    },
+    "watermark": {
+      "column": null,
+      "source": "llm",
+      "rationale": "The proc performs a full-scan load each run with no date-based WHERE filter on the source. Change detection is hash-based (SourceRowHash). DW_InsertDate is a DW metadata column, not a source modification watermark. This translates to a dbt snapshot with check strategy."
+    },
+    "foreign_keys": [],
+    "pii_actions": []
   }
 }
