@@ -1,0 +1,254 @@
+{
+  "schema": "dbo",
+  "name": "dim_date",
+  "columns": [
+    {
+      "name": "Date_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "FullDate",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DayName",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DayOfWeek",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DayOfMonth",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DayOfYear",
+      "sql_type": "SMALLINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "WeekOfYear",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "MonthNumber",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "MonthName",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "MonthShort",
+      "sql_type": "CHAR(3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "CalendarQuarter",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "CalendarQuarterName",
+      "sql_type": "CHAR(2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "CalendarYear",
+      "sql_type": "SMALLINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "CalendarYearMonth",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "FiscalYear",
+      "sql_type": "SMALLINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "FiscalQuarter",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "FiscalMonth",
+      "sql_type": "TINYINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsWeekend",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsHoliday",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "HolidayName",
+      "sql_type": "VARCHAR(60)",
+      "is_nullable": true,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Dim_Date",
+      "columns": [
+        "Date_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [],
+  "auto_increment_columns": [],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "12feb69ab28ea3f2cc559f9fe4683c21fe41398e4fb4c24b374f9800d428e8af",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_ap_invoice",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_inventory_receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_po",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_requisition",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_dlvy_variance_days",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FullDate",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "CalendarQuarterName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Date_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FiscalYear",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FullDate",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}

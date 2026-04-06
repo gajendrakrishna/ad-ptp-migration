@@ -1,0 +1,150 @@
+{
+  "schema": "rpt",
+  "name": "vw_price_variance",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Product",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ProductName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Dim_Vendor",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "VendorName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "dbo",
+          "name": "Fact_AP_Invoice",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Invoice_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoiced_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Match_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Amount",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance_Pct",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Billed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_Invoice_Number",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "67f8642fe050eeb8ffb7ac5b4dbadb56311fe359b59e9a028aa69278f0b667db",
+  "mode": "deterministic",
+  "routing_reasons": []
+}

@@ -1,0 +1,604 @@
+{
+  "schema": "dbo",
+  "name": "fact_ap_invoice",
+  "columns": [
+    {
+      "name": "Fact_Invoice_SK",
+      "sql_type": "BIGINT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "Invoice_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Vendor_Invoice_Number",
+      "sql_type": "VARCHAR(50)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Invoice_Line_Number",
+      "sql_type": "SMALLINT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_BK",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "InvoiceDate_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ReceivedDate_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DueDate_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Vendor_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Product_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Invoice_Status",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Match_Status",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Is_Match_Passed",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Is_Disputed",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Is_Paid",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Quantity_Billed",
+      "sql_type": "DECIMAL(10,3)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Invoiced_Unit_Price",
+      "sql_type": "DECIMAL(18,4)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_Unit_Price",
+      "sql_type": "DECIMAL(18,4)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Invoice_Line_Total",
+      "sql_type": "DECIMAL(18,2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "PO_Line_Amount",
+      "sql_type": "DECIMAL(18,2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Price_Variance",
+      "sql_type": "DECIMAL(18,2)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Price_Variance_Pct",
+      "sql_type": "DECIMAL(8,4)",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "Days_Until_Due",
+      "sql_type": "INT",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "Days_Invoice_To_Receive",
+      "sql_type": "INT",
+      "is_nullable": true,
+      "is_identity": false
+    },
+    {
+      "name": "DW_Load_DateTime",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Fact_Invoice",
+      "columns": [
+        "Fact_Invoice_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [
+    {
+      "constraint_name": "FK_FactInv_DueDate",
+      "columns": [
+        "DueDate_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactInv_InvDate",
+      "columns": [
+        "InvoiceDate_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactInv_Product",
+      "columns": [
+        "Product_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Product",
+      "referenced_columns": [
+        "Product_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactInv_RcvDate",
+      "columns": [
+        "ReceivedDate_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Date",
+      "referenced_columns": [
+        "Date_SK"
+      ]
+    },
+    {
+      "constraint_name": "FK_FactInv_Vendor",
+      "columns": [
+        "Vendor_SK"
+      ],
+      "referenced_schema": "dbo",
+      "referenced_table": "Dim_Vendor",
+      "referenced_columns": [
+        "Vendor_SK"
+      ]
+    }
+  ],
+  "auto_increment_columns": [
+    {
+      "column": "Fact_Invoice_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "c4b3004c11537f1e9273866f5ad1c3a397d1b0bcd16006d69da355aedf411b33",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_ap_invoice",
+          "is_selected": false,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "Days_Invoice_To_Receive",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Days_Until_Due",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "DueDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "InvoiceDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Invoice_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Invoice_Line_Number",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Invoice_Line_Total",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Invoice_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Invoiced_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Match_Passed",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Match_Status",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Line_Amount",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "PO_Unit_Price",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Price_Variance_Pct",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Quantity_Billed",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "ReceivedDate_SK",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_Invoice_Number",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_price_variance",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Invoice_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoiced_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Match_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Amount",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance_Pct",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Billed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_Invoice_Number",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_proc_perf_summary",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Invoice_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Days_Invoice_To_Receive",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Days_Until_Due",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "DueDate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "InvoiceDate_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Line_Total",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoice_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Invoiced_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Disputed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Match_Passed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Is_Paid",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Match_Status",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Line_Amount",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "PO_Unit_Price",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Price_Variance_Pct",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Quantity_Billed",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Vendor_Invoice_Number",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  }
+}

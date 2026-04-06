@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit hook: block secrets from being committed.
+# Installed by: uv run init scaffold-hooks
+
+set -euo pipefail
+
+# 1. Anthropic API keys anywhere in staged files
+ANT_KEY_PAT="sk-ant"; ANT_KEY_PAT="${ANT_KEY_PAT}-"
+if git diff --cached --diff-filter=ACMR -z -- . | xargs -0 grep -lE "${ANT_KEY_PAT}\S+" 2>/dev/null; then
+    echo "ERROR: Staged file contains an Anthropic API key. Remove it before committing." >&2
+    exit 1
+fi
+
+# 2. SA_PASSWORD in .mcp.json
+if git diff --cached --name-only | grep -q '\.mcp\.json$'; then
+    if git show :".mcp.json" 2>/dev/null | grep -q 'SA_PASSWORD'; then
+        echo "ERROR: .mcp.json contains SA_PASSWORD. This file should be in .gitignore." >&2
+        exit 1
+    fi
+fi
+
+# 3. MSSQL credentials in .env / .envrc files
+for f in $(git diff --cached --name-only | grep -E '\.(env|envrc)$' || true); do
+    if git show :"$f" 2>/dev/null | grep -qE '(MSSQL_HOST|MSSQL_PORT|MSSQL_DB|SA_PASSWORD)=.+'; then
+        echo "ERROR: $f contains MSSQL credentials. This file should be in .gitignore." >&2
+        exit 1
+    fi
+done

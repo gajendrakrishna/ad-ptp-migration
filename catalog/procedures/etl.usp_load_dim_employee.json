@@ -1,0 +1,127 @@
+{
+  "schema": "etl",
+  "name": "usp_load_dim_employee",
+  "references": {
+    "tables": {
+      "in_scope": [
+        {
+          "schema": "dbo",
+          "name": "Dim_Employee",
+          "is_selected": true,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "DW_InsertDate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Department",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveEnd",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveStart",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Email",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Employee_BK",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "FullName",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsActive",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "JobTitle",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "SourceRowHash",
+              "is_selected": true,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "Master",
+          "name": "Employees",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "Department",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Email",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "EmployeeCode",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "FullName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "IsActive",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "JobTitle",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    },
+    "procedures": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "ddl_hash": "75cb26083749bc7ebee943382e556c9a2d0752a23ecd6905ffaa6e33e2e0e626",
+  "mode": "deterministic",
+  "routing_reasons": []
+}

@@ -1,0 +1,353 @@
+{
+  "schema": "dbo",
+  "name": "dim_product",
+  "columns": [
+    {
+      "name": "Product_SK",
+      "sql_type": "INT",
+      "is_nullable": false,
+      "is_identity": true
+    },
+    {
+      "name": "Product_BK",
+      "sql_type": "VARCHAR(30)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "ProductName",
+      "sql_type": "NVARCHAR(200)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Description",
+      "sql_type": "NVARCHAR(500)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "UnitOfMeasure",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "Category",
+      "sql_type": "VARCHAR(30)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "AccountingType",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "GLAccount",
+      "sql_type": "VARCHAR(20)",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveStart",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "EffectiveEnd",
+      "sql_type": "DATE",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "IsCurrent",
+      "sql_type": "BIT",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "DW_InsertDate",
+      "sql_type": "DATETIME2",
+      "is_nullable": false,
+      "is_identity": false
+    },
+    {
+      "name": "SourceRowHash",
+      "sql_type": "VARBINARY(32)",
+      "is_nullable": true,
+      "is_identity": false
+    }
+  ],
+  "primary_keys": [
+    {
+      "constraint_name": "PK_Dim_Product",
+      "columns": [
+        "Product_SK"
+      ]
+    }
+  ],
+  "unique_indexes": [],
+  "foreign_keys": [],
+  "auto_increment_columns": [
+    {
+      "column": "Product_SK",
+      "mechanism": "identity"
+    }
+  ],
+  "change_capture": null,
+  "sensitivity_classifications": [],
+  "ddl_hash": "384531d931a938fafba875daf1a9f8c22d5bf19334c163fe9066a2e3baf508a9",
+  "referenced_by": {
+    "procedures": {
+      "in_scope": [
+        {
+          "schema": "etl",
+          "name": "usp_load_dim_product",
+          "is_selected": true,
+          "is_updated": true,
+          "columns": [
+            {
+              "name": "AccountingType",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Category",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "DW_InsertDate",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Description",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveEnd",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "EffectiveStart",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "GLAccount",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "ProductName",
+              "is_selected": false,
+              "is_updated": true
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "SourceRowHash",
+              "is_selected": true,
+              "is_updated": true
+            },
+            {
+              "name": "UnitOfMeasure",
+              "is_selected": false,
+              "is_updated": true
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_ap_invoice",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_inventory_receipt",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_po",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "etl",
+          "name": "usp_load_fact_requisition",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "IsCurrent",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_BK",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "views": {
+      "in_scope": [
+        {
+          "schema": "rpt",
+          "name": "vw_one_req_2_pos",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ProductName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_price_variance",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "ProductName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        },
+        {
+          "schema": "rpt",
+          "name": "vw_ptp_global_lifecycle",
+          "is_selected": true,
+          "is_updated": false,
+          "columns": [
+            {
+              "name": "AccountingType",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Category",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "GLAccount",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "ProductName",
+              "is_selected": true,
+              "is_updated": false
+            },
+            {
+              "name": "Product_SK",
+              "is_selected": true,
+              "is_updated": false
+            }
+          ]
+        }
+      ],
+      "out_of_scope": []
+    },
+    "functions": {
+      "in_scope": [],
+      "out_of_scope": []
+    }
+  },
+  "scoping": {
+    "status": "resolved",
+    "selected_writer": "etl.usp_load_dim_product",
+    "selected_writer_rationale": "etl.usp_load_dim_product is the sole direct writer to dbo.Dim_Product, implementing SCD Type 2 via a two-phase UPDATE+INSERT pattern. All four other procedures that reference Dim_Product (usp_load_fact_ap_invoice, usp_load_fact_inventory_receipt, usp_load_fact_po, usp_load_fact_requisition) are read-only consumers joining on Product_BK/IsCurrent."
+  }
+}
