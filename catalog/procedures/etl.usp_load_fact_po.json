@@ -379,5 +379,35 @@
   "ddl_hash": "dce162f0d7f1287372ca293368fe2f208018d1c64745bf9722241dd2b1ec90c9",
   "needs_enrich": true,
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; no transformation logic."
+    },
+    {
+      "type": "Truncate",
+      "action": "skip",
+      "sql": "TRUNCATE TABLE dbo.Fact_PurchaseOrder",
+      "source": "llm",
+      "rationale": "Full-reload truncate. Handled by dbt table materialization — no equivalent needed in model SQL."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": "INSERT INTO dbo.Fact_PurchaseOrder (...) SELECT po.PONumber, pol.LineNumber, req.RequisitionNumber, ISNULL(d_po.Date_SK,0), ISNULL(d_exp.Date_SK,0), ISNULL(vnd.Vendor_SK,-1), ISNULL(prod.Product_SK,-1), ISNULL(emp_buyer.Employee_SK,-1), ISNULL(emp_approver.Employee_SK,-1), po.POStatus, pol.Quantity, pol.AgreedUnitPrice, CAST(pol.Quantity*pol.AgreedUnitPrice AS DECIMAL(18,2)), rl.EstimatedUnitPrice, CASE WHEN rl.EstimatedUnitPrice IS NOT NULL THEN CAST((rl.EstimatedUnitPrice-pol.AgreedUnitPrice)*pol.Quantity AS DECIMAL(18,2)) ELSE NULL END, CASE WHEN req.RequisitionDate IS NOT NULL THEN DATEDIFF(DAY,req.RequisitionDate,po.PODate) ELSE NULL END FROM PTP_System.Purchasing.PurchaseOrders po INNER JOIN PTP_System.Purchasing.PurchaseOrderLines pol ON pol.POID=po.POID INNER JOIN PTP_System.Master.Vendors src_vnd ON src_vnd.VendorID=po.VendorID INNER JOIN PTP_System.Master.Items src_itm ON src_itm.ItemID=pol.ItemID INNER JOIN PTP_System.Master.Employees src_buyer ON src_buyer.EmployeeID=po.OrderedByID LEFT JOIN PTP_System.Purchasing.Requisitions req ON req.RequisitionID=po.RequisitionID LEFT JOIN PTP_System.Purchasing.RequisitionLines rl ON rl.RequisitionLineID=pol.RequisitionLineID LEFT JOIN PTP_System.Master.Employees src_approver ON src_approver.EmployeeID=po.ApprovedByID LEFT JOIN dbo.Dim_Date d_po ON d_po.Date_SK=CAST(FORMAT(po.PODate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Date d_exp ON d_exp.Date_SK=CAST(FORMAT(po.ExpectedDelivery,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Vendor vnd ON vnd.Vendor_BK=src_vnd.VendorCode AND vnd.IsCurrent=1 LEFT JOIN dbo.Dim_Product prod ON prod.Product_BK=src_itm.ItemCode AND prod.IsCurrent=1 LEFT JOIN dbo.Dim_Employee emp_buyer ON emp_buyer.Employee_BK=src_buyer.EmployeeCode AND emp_buyer.IsCurrent=1 LEFT JOIN dbo.Dim_Employee emp_approver ON emp_approver.Employee_BK=src_approver.EmployeeCode AND emp_approver.IsCurrent=1",
+      "source": "llm",
+      "rationale": "Core purchase order fact transformation: joins PO lines to requisition lines, resolves buyer and approver employee SKs, computes price savings vs estimate and approval duration KPIs. The SELECT becomes the dbt model SQL."
+    },
+    {
+      "type": "Print",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Fact_PO: ', @@ROWCOUNT, ' rows loaded.')",
+      "source": "llm",
+      "rationale": "Operational logging. Not needed in dbt."
+    }
+  ]
 }

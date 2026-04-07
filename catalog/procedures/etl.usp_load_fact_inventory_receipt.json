@@ -397,5 +397,35 @@
   "ddl_hash": "dd2e9e7f1cee7bc4a98b7d0e077c840ec8050bab810b2524c46589bea1640b6b",
   "needs_enrich": true,
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; no transformation logic."
+    },
+    {
+      "type": "Truncate",
+      "action": "skip",
+      "sql": "TRUNCATE TABLE dbo.Fact_Inventory_Receipt",
+      "source": "llm",
+      "rationale": "Full-reload truncate. Handled by dbt table materialization — no equivalent needed in model SQL."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": ";WITH GR_RunningTotal AS (SELECT grl.GRLineID, grl.GRID, grl.POLineID, grl.QuantityReceived, SUM(grl.QuantityReceived) OVER (PARTITION BY grl.POLineID ORDER BY gr_inner.ReceiptDate ASC, gr_inner.GRID ASC, grl.GRLineID ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS CumulativeQtyReceived FROM PTP_System.Purchasing.GoodsReceiptLines grl INNER JOIN PTP_System.Purchasing.GoodsReceipts gr_inner ON gr_inner.GRID=grl.GRID WHERE gr_inner.GRStatus='Posted') INSERT INTO dbo.Fact_Inventory_Receipt (...) SELECT gr.GRNumber, po.PONumber, ISNULL(d_rcv.Date_SK,0), ISNULL(d_exp.Date_SK,0), ISNULL(vnd.Vendor_SK,-1), ISNULL(prod.Product_SK,-1), ISNULL(loc.Location_SK,-1), ISNULL(emp.Employee_SK,-1), gr.GRStatus, pol.Quantity, run.QuantityReceived, run.CumulativeQtyReceived, CAST(pol.Quantity-run.CumulativeQtyReceived AS DECIMAL(10,3)), CAST((run.CumulativeQtyReceived/pol.Quantity)*100 AS DECIMAL(5,2)), DATEDIFF(DAY,po.PODate,gr.ReceiptDate), CASE WHEN po.ExpectedDelivery IS NOT NULL THEN DATEDIFF(DAY,po.ExpectedDelivery,gr.ReceiptDate) ELSE NULL END FROM GR_RunningTotal run INNER JOIN PTP_System.Purchasing.GoodsReceiptLines grl ON grl.GRLineID=run.GRLineID INNER JOIN PTP_System.Purchasing.GoodsReceipts gr ON gr.GRID=run.GRID INNER JOIN PTP_System.Purchasing.PurchaseOrderLines pol ON pol.POLineID=run.POLineID INNER JOIN PTP_System.Purchasing.PurchaseOrders po ON po.POID=pol.POID INNER JOIN PTP_System.Master.Vendors src_vnd ON src_vnd.VendorID=po.VendorID INNER JOIN PTP_System.Master.Items src_itm ON src_itm.ItemID=pol.ItemID INNER JOIN PTP_System.Master.Employees src_emp ON src_emp.EmployeeID=gr.ReceivedByID LEFT JOIN dbo.Dim_Date d_rcv ON d_rcv.Date_SK=CAST(FORMAT(gr.ReceiptDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Date d_exp ON d_exp.Date_SK=CAST(FORMAT(po.ExpectedDelivery,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Vendor vnd ON vnd.Vendor_BK=src_vnd.VendorCode AND vnd.IsCurrent=1 LEFT JOIN dbo.Dim_Product prod ON prod.Product_BK=src_itm.ItemCode AND prod.IsCurrent=1 LEFT JOIN dbo.Dim_Employee emp ON emp.Employee_BK=src_emp.EmployeeCode AND emp.IsCurrent=1 LEFT JOIN dbo.Dim_Location loc ON loc.Location_BK=CASE WHEN src_itm.ItemCategory='Office' THEN 'WH-SUPP-03' WHEN src_itm.ItemCategory='Hardware' AND src_itm.ItemCode LIKE '%SWITCH%' THEN 'WH-NET-04' WHEN src_itm.ItemCategory='Hardware' THEN 'WH-IT-02' ELSE 'WH-CORP-01' END AND loc.IsCurrent=1 WHERE gr.GRStatus='Posted'",
+      "source": "llm",
+      "rationale": "Core inventory receipt transformation with running cumulative quantity CTE (window function over chronological receipt order). Computes lead time, delivery variance, and receipt completeness %. The CTE+SELECT becomes the dbt model SQL."
+    },
+    {
+      "type": "Print",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Fact_Inventory_Receipt: ', @@ROWCOUNT, ' rows loaded.')",
+      "source": "llm",
+      "rationale": "Operational logging. Not needed in dbt."
+    }
+  ]
 }

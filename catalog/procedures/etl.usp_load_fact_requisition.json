@@ -333,5 +333,35 @@
   "ddl_hash": "3cdea8c49bc4ae8d7ddb521c785b3d38b2cab6bf9ab07197dd9f131386bd754d",
   "needs_enrich": true,
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; no transformation logic."
+    },
+    {
+      "type": "Truncate",
+      "action": "skip",
+      "sql": "TRUNCATE TABLE dbo.Fact_Requisition",
+      "source": "llm",
+      "rationale": "Full-reload truncate. Handled by dbt table materialization — no equivalent needed in model SQL."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": "INSERT INTO dbo.Fact_Requisition (...) SELECT r.RequisitionNumber, rl.RequisitionLineID, ISNULL(d_req.Date_SK,0), ISNULL(d_rby.Date_SK,0), ISNULL(emp_req.Employee_SK,-1), ISNULL(emp_apr.Employee_SK,-1), ISNULL(prod.Product_SK,-1), ISNULL(svnd.Vendor_SK,-1), r.RequisitionStatus, CASE WHEN r.RequisitionStatus IN ('Approved','Converted') THEN 1 ELSE 0 END, CASE WHEN r.RequisitionStatus='Rejected' THEN 1 ELSE 0 END, CASE WHEN r.RequisitionStatus='Converted' THEN 1 ELSE 0 END, rl.Quantity, rl.EstimatedUnitPrice, CAST(rl.Quantity*rl.EstimatedUnitPrice AS DECIMAL(18,2)), CASE WHEN r.RequisitionStatus IN ('Approved','Rejected','Converted') THEN DATEDIFF(DAY,r.RequisitionDate,CAST(r.UpdatedAt AS DATE)) ELSE NULL END FROM PTP_System.Purchasing.Requisitions r INNER JOIN PTP_System.Purchasing.RequisitionLines rl ON rl.RequisitionID=r.RequisitionID INNER JOIN PTP_System.Master.Employees src_req_emp ON src_req_emp.EmployeeID=r.RequestedByID INNER JOIN PTP_System.Master.Items src_itm ON src_itm.ItemID=rl.ItemID LEFT JOIN dbo.Dim_Date d_req ON d_req.Date_SK=CAST(FORMAT(r.RequisitionDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Date d_rby ON d_rby.Date_SK=CAST(FORMAT(r.RequiredByDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Employee emp_req ON emp_req.Employee_BK=src_req_emp.EmployeeCode AND emp_req.IsCurrent=1 LEFT JOIN PTP_System.Master.Employees src_apr_emp ON src_apr_emp.EmployeeID=r.ApprovedByID LEFT JOIN dbo.Dim_Employee emp_apr ON emp_apr.Employee_BK=src_apr_emp.EmployeeCode AND emp_apr.IsCurrent=1 LEFT JOIN dbo.Dim_Product prod ON prod.Product_BK=src_itm.ItemCode AND prod.IsCurrent=1 LEFT JOIN PTP_System.Master.Vendors src_svnd ON src_svnd.VendorID=rl.SuggestedVendorID LEFT JOIN dbo.Dim_Vendor svnd ON svnd.Vendor_BK=src_svnd.VendorCode AND svnd.IsCurrent=1",
+      "source": "llm",
+      "rationale": "Core requisition fact transformation: joins requisition lines to employee, product, and vendor dimensions, computes status flags (is_approved, is_rejected, is_converted) and approval duration KPI. The SELECT becomes the dbt model SQL."
+    },
+    {
+      "type": "Print",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Fact_Requisition: ', @@ROWCOUNT, ' rows loaded.')",
+      "source": "llm",
+      "rationale": "Operational logging. Not needed in dbt."
+    }
+  ]
 }
