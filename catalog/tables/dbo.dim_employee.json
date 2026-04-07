@@ -259,5 +259,10 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "status": "resolved",
+    "selected_writer": "etl.usp_load_dim_employee",
+    "selected_writer_rationale": "etl.usp_load_dim_employee is the sole direct writer to dbo.Dim_Employee, implementing SCD Type 2 via a two-phase UPDATE+INSERT pattern using SHA2_256 hash change detection. All other procedures referencing Dim_Employee (usp_load_fact_inventory_receipt, usp_load_fact_po, usp_load_fact_requisition) are read-only consumers joining on Employee_BK/IsCurrent."
   }
 }
