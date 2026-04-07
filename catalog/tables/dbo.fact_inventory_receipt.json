@@ -493,11 +493,124 @@
         {
           "type": "INSERT",
           "action": "migrate",
-          "note": "Core transformation logic \u2014 all non-identity columns populated via CTE + main SELECT"
+          "note": "Core transformation logic — all non-identity columns populated via CTE + main SELECT"
         }
       ],
-      "logic_summary": "Full reload via TRUNCATE + INSERT. CTE (GR_RunningTotal) computes per-PO-line running cumulative received quantity using SUM OVER window function ordered by ReceiptDate/GRID/GRLineID, filtered to Posted receipts. Main SELECT joins goods receipts, PO lines/headers, vendors, items, employees from PTP_System and resolves surrogate keys against DW dimensions with ISNULL defaults. Key derived measures: Lead_Time_Days (DATEDIFF PODate to ReceiptDate), Delivery_Variance_Days (DATEDIFF ExpectedDelivery to ReceiptDate, nullable when no expected date), Receipt_Completeness_Pct (cumulative/ordered*100), Quantity_Outstanding. Location surrogate resolved via rule-based CASE on ItemCategory (Office\u2192WH-SUPP-03, Hardware SWITCH\u2192WH-NET-04, Hardware\u2192WH-IT-02, else WH-CORP-01)."
+      "logic_summary": "Full reload via TRUNCATE + INSERT. CTE (GR_RunningTotal) computes per-PO-line running cumulative received quantity using SUM OVER window function ordered by ReceiptDate/GRID/GRLineID, filtered to Posted receipts. Main SELECT joins goods receipts, PO lines/headers, vendors, items, employees from PTP_System and resolves surrogate keys against DW dimensions with ISNULL defaults. Key derived measures: Lead_Time_Days (DATEDIFF PODate to ReceiptDate), Delivery_Variance_Days (DATEDIFF ExpectedDelivery to ReceiptDate, nullable when no expected date), Receipt_Completeness_Pct (cumulative/ordered*100), Quantity_Outstanding. Location surrogate resolved via rule-based CASE on ItemCategory (Office→WH-SUPP-03, Hardware SWITCH→WH-NET-04, Hardware→WH-IT-02, else WH-CORP-01)."
     },
     "warnings": []
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_fact_inventory_receipt",
+    "classification": {
+      "resolved_kind": "fact_accumulating_snapshot",
+      "source": "llm",
+      "rationale": "The table tracks the accumulating fulfillment state of each goods receipt line against its PO line, storing cumulative measures (Cumulative_Qty_Received, Quantity_Outstanding, Receipt_Completeness_Pct) that evolve as more receipts arrive. Although implemented as a TRUNCATE + full reload, the semantic grain and measure design match an accumulating snapshot tracking progress of a multi-step business process (PO to receipts to fulfilment) over time."
+    },
+    "primary_key": {
+      "columns": [
+        "Fact_Receipt_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Fact_Receipt on Fact_Receipt_SK, which is an IDENTITY BIGINT column — a definitive surrogate key confirmed by both the primary_keys and auto_increment_columns catalog signals."
+    },
+    "natural_key": {
+      "columns": [
+        "GR_BK",
+        "Product_SK"
+      ],
+      "source": "llm",
+      "rationale": "Fact_Receipt_SK is an identity surrogate; the natural grain identifier is the goods receipt number (GR_BK) combined with the product (Product_SK), representing one receipt line per product per GR event, as the source system GRLineID is not persisted in the fact table."
+    },
+    "watermark": {
+      "column": "DW_Load_DateTime",
+      "source": "llm",
+      "rationale": "The proc performs a full TRUNCATE + reload with no incremental WHERE clause; DW_Load_DateTime (DATETIME2 NOT NULL) is the only datetime column on the fact table itself and serves as the dbt incremental watermark. Recommended dbt strategy: microbatch or merge."
+    },
+    "foreign_keys": [
+      {
+        "constraint_name": "FK_FactGR_RcvDate",
+        "columns": [
+          "ReceiptDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two fact columns (ReceiptDate_SK and ExpectedDelivery_SK) both join Dim_Date in different date roles; ReceiptDate_SK carries the actual receipt date role."
+      },
+      {
+        "constraint_name": "FK_FactGR_ExpDel",
+        "columns": [
+          "ExpectedDelivery_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two fact columns (ReceiptDate_SK and ExpectedDelivery_SK) both join Dim_Date in different date roles; ExpectedDelivery_SK carries the expected delivery date role."
+      },
+      {
+        "constraint_name": "FK_FactGR_Vendor",
+        "columns": [
+          "Vendor_SK"
+        ],
+        "referenced_table": "dbo.Dim_Vendor",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension key with no multi-role pattern; the writer proc resolves Vendor_SK via a single LEFT JOIN on Vendor_BK."
+      },
+      {
+        "constraint_name": "FK_FactGR_Product",
+        "columns": [
+          "Product_SK"
+        ],
+        "referenced_table": "dbo.Dim_Product",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension key with no multi-role pattern; the writer proc resolves Product_SK via a single LEFT JOIN on Product_BK."
+      },
+      {
+        "constraint_name": "FK_FactGR_Location",
+        "columns": [
+          "Location_SK"
+        ],
+        "referenced_table": "dbo.Dim_Location",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension key with no multi-role pattern; the writer proc resolves Location_SK via a rule-based LEFT JOIN on Location_BK derived from item category."
+      },
+      {
+        "constraint_name": "FK_FactGR_RcvdBy",
+        "columns": [
+          "ReceivedBy_Employee_SK"
+        ],
+        "referenced_table": "dbo.Dim_Employee",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension key with no multi-role pattern; the writer proc resolves ReceivedBy_Employee_SK via a single LEFT JOIN on Employee_BK."
+      },
+      {
+        "constraint_name": null,
+        "columns": [
+          "GR_BK"
+        ],
+        "referenced_table": null,
+        "fk_type": "degenerate",
+        "source": "llm",
+        "rationale": "GR_BK (GRNumber, VARCHAR(20)) is a business key stored directly in the fact table with no corresponding dimension join target; it functions as a degenerate dimension for filtering and drill-through."
+      },
+      {
+        "constraint_name": null,
+        "columns": [
+          "PO_BK"
+        ],
+        "referenced_table": null,
+        "fk_type": "degenerate",
+        "source": "llm",
+        "rationale": "PO_BK (PONumber, VARCHAR(20)) is a business key stored directly in the fact table with no corresponding dimension join target; it functions as a degenerate dimension for PO-level grouping and drill-through."
+      }
+    ],
+    "pii_actions": []
   }
 }
