@@ -1,0 +1,494 @@
+version: 2
+
+models:
+  - name: stg_fact_ap_invoice
+    description: >
+      Migrated from etl.usp_load_fact_ap_invoice.
+      Target: dbo.fact_ap_invoice. Loads AP invoice fact rows by joining
+      source invoice lines to purchase order lines, resolving conformed
+      dimension surrogate keys, and computing price variance measures.
+    columns:
+
+      - name: invoice_bk
+        description: >
+          Business key: source InternalInvoiceRef from Finance.Invoices.
+        data_tests:
+          - not_null
+
+      - name: invoice_line_number
+        description: "Line number within the invoice; part of the natural key."
+        data_tests:
+          - not_null
+
+      - name: vendor_invoice_number
+        description: "Vendor-issued invoice number."
+
+      - name: po_bk
+        description: "PO business key (PONumber) from PurchaseOrders."
+
+      - name: invoicedate_sk
+        description: >
+          Date surrogate key for the invoice date; 0 when date not
+          found in Dim_Date.
+        data_tests:
+          - not_null
+
+      - name: receiveddate_sk
+        description: "Date surrogate key for AP receipt date; 0 when not found."
+
+      - name: duedate_sk
+        description: "Date surrogate key for payment due date; 0 when not found."
+
+      - name: vendor_sk
+        description: >
+          Vendor surrogate key resolved via current SCD2 lookup;
+          -1 when vendor not found in Dim_Vendor.
+        data_tests:
+          - not_null
+
+      - name: product_sk
+        description: >
+          Product surrogate key resolved via current SCD2 lookup;
+          -1 when item not found in Dim_Product.
+        data_tests:
+          - not_null
+
+      - name: invoice_status
+        description: >
+          Invoice lifecycle status
+          (e.g. Approved, Disputed, Paid, Pending).
+
+      - name: match_status
+        description: >
+          AP three-way match status
+          (e.g. Matched, Failed, Mismatched, Pending).
+
+      - name: is_match_passed
+        description: "Flag: 1 when MatchStatus = Matched, else 0."
+
+      - name: is_disputed
+        description: "Flag: 1 when InvoiceStatus = Disputed, else 0."
+
+      - name: is_paid
+        description: "Flag: 1 when InvoiceStatus = Paid, else 0."
+
+      - name: quantity_billed
+        description: "Quantity billed on this invoice line."
+
+      - name: invoiced_unit_price
+        description: "Unit price claimed by vendor on the invoice line."
+
+      - name: po_unit_price
+        description: "Agreed unit price from the purchase order line."
+
+      - name: invoice_line_total
+        description: >
+          QuantityBilled x InvoicedUnitPrice, cast to DECIMAL(18,2).
+
+      - name: po_line_amount
+        description: >
+          QuantityBilled x AgreedUnitPrice, cast to DECIMAL(18,2).
+
+      - name: price_variance
+        description: >
+          (InvoicedUnitPrice - AgreedUnitPrice) x QuantityBilled;
+          positive means vendor charged more than PO price.
+        data_tests:
+          - not_null
+
+      - name: price_variance_pct
+        description: >
+          Price variance as a percentage of the PO unit price;
+          NULL when AgreedUnitPrice = 0 to avoid division by zero.
+
+      - name: days_until_due
+        description: >
+          DATEDIFF(day, InvoiceDate, DueDate) — AP urgency KPI.
+
+      - name: days_invoice_to_receive
+        description: >
+          DATEDIFF(day, InvoiceDate, ReceivedDate) —
+          AP processing lag.
+
+      - name: dw_load_datetime
+        description: "ETL load timestamp (current_timestamp at dbt run time)."
+        data_tests:
+          - not_null
+          - dbt_utils.recency:
+              datepart: day
+              field: dw_load_datetime
+              interval: 1
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking."
+
+    unit_tests:
+
+      - name: test_happy_path_all_dims_matched
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 5, InvoiceNumber: "TST-INV-S01",
+                 InternalInvoiceRef: "TST-AP-S01", VendorID: 2029,
+                 InvoiceDate: "2024-03-01", ReceivedDate: "2024-03-05",
+                 DueDate: "2024-04-04", InvoiceStatus: "Approved",
+                 MatchStatus: "Matched",
+                 UpdatedAt: "2024-03-05T10:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 5, LineNumber: 1, POLineID: 8,
+                 ItemID: 3029, QuantityBilled: 10.0,
+                 InvoicedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 8, POID: 7, Quantity: 10.0,
+                 AgreedUnitPrice: 48.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 7, PONumber: "TST-PO-S01", VendorID: 2029}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 2029, VendorCode: "TST-VND-S01"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 3029, ItemCode: "TST-ITM-S01"}
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240301, FullDate: "2024-03-01"}
+              - {Date_SK: 20240305, FullDate: "2024-03-05"}
+              - {Date_SK: 20240404, FullDate: "2024-04-04"}
+
+          - input: source('dbo', 'dim_vendor')
+            rows:
+              - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01", IsCurrent: 1}
+
+          - input: source('dbo', 'dim_product')
+            rows:
+              - {Product_SK: 20, Product_BK: "TST-ITM-S01",
+                 IsCurrent: 1}
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-S01",
+               vendor_invoice_number: "TST-INV-S01",
+               invoice_line_number: 1, po_bk: "TST-PO-S01",
+               invoicedate_sk: 20240301, receiveddate_sk: 20240305,
+               duedate_sk: 20240404,
+               vendor_sk: 10, product_sk: 20,
+               invoice_status: "Approved",
+               match_status: "Matched",
+               is_match_passed: 1, is_disputed: 0, is_paid: 0,
+               quantity_billed: 10.0, invoiced_unit_price: 50.0,
+               po_unit_price: 48.0,
+               invoice_line_total: 500.00, po_line_amount: 480.00,
+               price_variance: 20.00,
+               price_variance_pct: 41.6667,
+               days_until_due: 34,
+               days_invoice_to_receive: 4}
+
+      - name: test_match_status_pending_not_matched
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 6, InvoiceNumber: "TST-INV-S02",
+                 InternalInvoiceRef: "TST-AP-S02", VendorID: 2030,
+                 InvoiceDate: "2024-04-01", ReceivedDate: "2024-04-03",
+                 DueDate: "2024-05-01", InvoiceStatus: "Pending",
+                 MatchStatus: "Pending",
+                 UpdatedAt: "2024-04-03T10:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 6, LineNumber: 1, POLineID: 9,
+                 ItemID: 3030, QuantityBilled: 4.0,
+                 InvoicedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 9, POID: 8, Quantity: 4.0,
+                 AgreedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 8, PONumber: "TST-PO-S02", VendorID: 2030}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 2030, VendorCode: "TST-VND-S02"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 3030, ItemCode: "TST-ITM-S02"}
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240401, FullDate: "2024-04-01"}
+              - {Date_SK: 20240403, FullDate: "2024-04-03"}
+              - {Date_SK: 20240501, FullDate: "2024-05-01"}
+
+          - input: source('dbo', 'dim_vendor')
+            rows:
+              - {Vendor_SK: 11, Vendor_BK: "TST-VND-S02",
+                 IsCurrent: 1}
+
+          - input: source('dbo', 'dim_product')
+            rows:
+              - {Product_SK: 21, Product_BK: "TST-ITM-S02",
+                 IsCurrent: 1}
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-S02", invoice_line_number: 1,
+               invoicedate_sk: 20240401, receiveddate_sk: 20240403,
+               duedate_sk: 20240501,
+               vendor_sk: 11, product_sk: 21,
+               invoice_status: "Pending", match_status: "Pending",
+               is_match_passed: 0, is_disputed: 0, is_paid: 0,
+               quantity_billed: 4.0, invoiced_unit_price: 50.0,
+               po_unit_price: 50.0,
+               invoice_line_total: 200.00, po_line_amount: 200.00,
+               price_variance: 0.00, price_variance_pct: 0.0000,
+               days_until_due: 30, days_invoice_to_receive: 2}
+
+      - name: test_invoice_status_disputed
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 7, InvoiceNumber: "TST-INV-S03",
+                 InternalInvoiceRef: "TST-AP-S03", VendorID: 2031,
+                 InvoiceDate: "2024-05-10", ReceivedDate: "2024-05-12",
+                 DueDate: "2024-06-11", InvoiceStatus: "Disputed",
+                 MatchStatus: "Mismatched",
+                 UpdatedAt: "2024-05-12T10:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 7, LineNumber: 1, POLineID: 10,
+                 ItemID: 3031, QuantityBilled: 5.0,
+                 InvoicedUnitPrice: 60.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 10, POID: 9, Quantity: 5.0,
+                 AgreedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 9, PONumber: "TST-PO-S03", VendorID: 2031}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 2031, VendorCode: "TST-VND-S03"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 3031, ItemCode: "TST-ITM-S03"}
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240510, FullDate: "2024-05-10"}
+              - {Date_SK: 20240512, FullDate: "2024-05-12"}
+              - {Date_SK: 20240611, FullDate: "2024-06-11"}
+
+          - input: source('dbo', 'dim_vendor')
+            rows:
+              - {Vendor_SK: 12, Vendor_BK: "TST-VND-S03",
+                 IsCurrent: 1}
+
+          - input: source('dbo', 'dim_product')
+            rows:
+              - {Product_SK: 22, Product_BK: "TST-ITM-S03",
+                 IsCurrent: 1}
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-S03", invoice_line_number: 1,
+               invoicedate_sk: 20240510, receiveddate_sk: 20240512,
+               duedate_sk: 20240611,
+               vendor_sk: 12, product_sk: 22,
+               invoice_status: "Disputed",
+               match_status: "Mismatched",
+               is_match_passed: 0, is_disputed: 1, is_paid: 0,
+               quantity_billed: 5.0, invoiced_unit_price: 60.0,
+               po_unit_price: 50.0,
+               invoice_line_total: 300.00, po_line_amount: 250.00,
+               price_variance: 50.00,
+               price_variance_pct: 20.0000,
+               days_until_due: 32,
+               days_invoice_to_receive: 2}
+
+      - name: test_gap_dim_not_found_uses_sentinel_keys
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 99, InvoiceNumber: "TST-INV-GAP1",
+                 InternalInvoiceRef: "TST-AP-GAP1", VendorID: 9999,
+                 InvoiceDate: "2024-01-15", ReceivedDate: "2024-01-17",
+                 DueDate: "2024-02-15", InvoiceStatus: "Approved",
+                 MatchStatus: "Matched",
+                 UpdatedAt: "2024-01-17T00:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 99, LineNumber: 1, POLineID: 55,
+                 ItemID: 9999, QuantityBilled: 1.0,
+                 InvoicedUnitPrice: 100.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 55, POID: 55, Quantity: 1.0,
+                 AgreedUnitPrice: 100.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 55, PONumber: "TST-PO-GAP1", VendorID: 9999}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 9999, VendorCode: "UNKNOWN-VND"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 9999, ItemCode: "UNKNOWN-ITM"}
+
+          - input: source('dbo', 'dim_date')
+            rows: []
+
+          - input: source('dbo', 'dim_vendor')
+            rows: []
+
+          - input: source('dbo', 'dim_product')
+            rows: []
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-GAP1", invoice_line_number: 1,
+               invoicedate_sk: 0, receiveddate_sk: 0, duedate_sk: 0,
+               vendor_sk: -1, product_sk: -1,
+               is_match_passed: 1, is_disputed: 0, is_paid: 0,
+               price_variance: 0.00, price_variance_pct: 0.0000}
+
+      - name: test_gap_zero_agreed_price_variance_pct_null
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 98, InvoiceNumber: "TST-INV-GAP2",
+                 InternalInvoiceRef: "TST-AP-GAP2", VendorID: 2029,
+                 InvoiceDate: "2024-06-01", ReceivedDate: "2024-06-02",
+                 DueDate: "2024-07-01", InvoiceStatus: "Approved",
+                 MatchStatus: "Matched",
+                 UpdatedAt: "2024-06-02T00:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 98, LineNumber: 1, POLineID: 56,
+                 ItemID: 3029, QuantityBilled: 3.0,
+                 InvoicedUnitPrice: 10.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 56, POID: 56, Quantity: 3.0,
+                 AgreedUnitPrice: 0.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 56, PONumber: "TST-PO-GAP2", VendorID: 2029}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 2029, VendorCode: "TST-VND-S01"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 3029, ItemCode: "TST-ITM-S01"}
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240601, FullDate: "2024-06-01"}
+              - {Date_SK: 20240602, FullDate: "2024-06-02"}
+              - {Date_SK: 20240701, FullDate: "2024-07-01"}
+
+          - input: source('dbo', 'dim_vendor')
+            rows:
+              - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01",
+                 IsCurrent: 1}
+
+          - input: source('dbo', 'dim_product')
+            rows:
+              - {Product_SK: 20, Product_BK: "TST-ITM-S01",
+                 IsCurrent: 1}
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-GAP2", invoice_line_number: 1,
+               invoiced_unit_price: 10.0, po_unit_price: 0.0,
+               invoice_line_total: 30.00, po_line_amount: 0.00,
+               price_variance: 30.00,
+               price_variance_pct: null}
+
+      - name: test_gap_expired_dim_vendor_not_matched
+        model: stg_fact_ap_invoice
+        given:
+          - input: source('finance', 'invoices')
+            rows:
+              - {InvoiceID: 97, InvoiceNumber: "TST-INV-GAP3",
+                 InternalInvoiceRef: "TST-AP-GAP3", VendorID: 2029,
+                 InvoiceDate: "2024-06-01", ReceivedDate: "2024-06-02",
+                 DueDate: "2024-07-01", InvoiceStatus: "Approved",
+                 MatchStatus: "Matched",
+                 UpdatedAt: "2024-06-02T00:00:00"}
+
+          - input: source('finance', 'invoicelines')
+            rows:
+              - {InvoiceID: 97, LineNumber: 1, POLineID: 57,
+                 ItemID: 3029, QuantityBilled: 2.0,
+                 InvoicedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - {POLineID: 57, POID: 57, Quantity: 2.0,
+                 AgreedUnitPrice: 50.0}
+
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - {POID: 57, PONumber: "TST-PO-GAP3", VendorID: 2029}
+
+          - input: source('master', 'vendors')
+            rows:
+              - {VendorID: 2029, VendorCode: "TST-VND-S01"}
+
+          - input: source('master', 'items')
+            rows:
+              - {ItemID: 3029, ItemCode: "TST-ITM-S01"}
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240601, FullDate: "2024-06-01"}
+              - {Date_SK: 20240602, FullDate: "2024-06-02"}
+              - {Date_SK: 20240701, FullDate: "2024-07-01"}
+
+          - input: source('dbo', 'dim_vendor')
+            rows:
+              - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01",
+                 IsCurrent: 0}
+
+          - input: source('dbo', 'dim_product')
+            rows:
+              - {Product_SK: 20, Product_BK: "TST-ITM-S01",
+                 IsCurrent: 1}
+
+        expect:
+          rows:
+            - {invoice_bk: "TST-AP-GAP3", vendor_sk: -1,
+               product_sk: 20}
