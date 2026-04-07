@@ -1,3 +1,9 @@
 version: 2
-
-sources: []
+sources:
+- name: dbo
+  description: Source tables from dbo schema
+  tables:
+  - name: dim_date
+    description: dim_date from source system
+  - name: dim_location
+    description: dim_location from source system
