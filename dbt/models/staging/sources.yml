@@ -7,3 +7,31 @@ sources:
     description: dim_date from source system
   - name: dim_location
     description: dim_location from source system
+  - name: Dim_Vendor
+    description: Dim_Vendor SCD2 dimension from dbo schema
+  - name: Dim_Product
+    description: Dim_Product SCD2 dimension from dbo schema
+  - name: Dim_Employee
+    description: Dim_Employee SCD2 dimension from dbo schema
+
+- name: purchasing
+  description: Purchasing transactional tables from PTP_System.Purchasing schema
+  tables:
+  - name: PurchaseOrders
+    description: Purchase order headers
+  - name: PurchaseOrderLines
+    description: Purchase order line items
+  - name: Requisitions
+    description: Purchase requisition headers
+  - name: RequisitionLines
+    description: Purchase requisition line items
+
+- name: master
+  description: Master data tables from PTP_System.Master schema
+  tables:
+  - name: Vendors
+    description: Vendor master data
+  - name: Items
+    description: Item/product master data
+  - name: Employees
+    description: Employee master data
