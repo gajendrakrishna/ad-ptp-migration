@@ -1,0 +1,3754 @@
+unit_tests:
+- name: test_happy_path_all_dims_matched
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S1
+      POID: 8019
+      ReceivedByID: 10017
+      ReceiptDate: '2024-03-20'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-03-20T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 8
+      POLineID: 8020
+      QuantityReceived: 10.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S1
+      RequisitionID: null
+      VendorID: 10041
+      OrderedByID: 302
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-03-01'
+      ExpectedDelivery: '2024-03-15'
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-03-01T08:00:00'
+      UpdatedAt: '2024-03-20T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8019
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3041
+      Quantity: 10.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 10.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S1
+      VendorName: Acme Supplies Ltd
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S1
+      ItemName: Server Rack Unit
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S1
+      FullName: John Receiver
+      Email: jreceiver@test.com
+      Department: Warehouse
+      JobTitle: Goods Receiver
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-06-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240320
+      FullDate: '2024-03-20'
+      DayName: Wednesday
+      DayOfWeek: 4
+      DayOfMonth: 20
+      DayOfYear: 80
+      WeekOfYear: 12
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240315
+      FullDate: '2024-03-15'
+      DayName: Friday
+      DayOfWeek: 6
+      DayOfMonth: 15
+      DayOfYear: 75
+      WeekOfYear: 11
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S1
+      VendorName: Acme Supplies Ltd
+      ContactName: Jane Contact
+      City: Dallas
+      Country: United States
+      TaxID: 12-3456789
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S1
+      ProductName: Server Rack Unit
+      Description: Standard rack unit
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S1
+      FullName: John Receiver
+      Email: jreceiver@test.com
+      Department: Warehouse
+      JobTitle: Goods Receiver
+      IsActive: 1
+      EffectiveStart: '2022-06-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-06-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Dallas
+      StateProvince: TX
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S1
+      PO_BK: TST-PO-S1
+      ReceiptDate_SK: 20240320
+      ExpectedDelivery_SK: 20240315
+      Vendor_SK: 132
+      Product_SK: 73
+      Location_SK: 1
+      ReceivedBy_Employee_SK: 104
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 19
+      Delivery_Variance_Days: 5
+      DW_Load_DateTime: '2026-04-07 06:29:59'
+- name: test_no_expected_delivery_variance_null
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S2
+      POID: 8020
+      ReceivedByID: 10018
+      ReceiptDate: '2024-04-10'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-04-10T10:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 9
+      POLineID: 8021
+      QuantityReceived: 5.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S2
+      RequisitionID: null
+      VendorID: 10042
+      OrderedByID: 303
+      ApprovedByID: null
+      CostCenterID: 101
+      PODate: '2024-03-25'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 250.0
+      Notes: null
+      CreatedAt: '2024-03-25T08:00:00'
+      UpdatedAt: '2024-04-10T10:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8020
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3042
+      Quantity: 5.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 5.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S2
+      VendorName: Beta Corp
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: Canada
+      TaxID: null
+      PaymentTerms: NET15
+      VendorStatus: Active
+      CreatedAt: '2023-02-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S2
+      ItemName: Office Chair
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Office
+      AccountingType: Indirect
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-03-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S2
+      FullName: Mary Stocker
+      Email: mstocker@test.com
+      Department: Operations
+      JobTitle: Store Keeper
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2021-09-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S2
+      VendorName: Beta Corp
+      ContactName: Bob Contact
+      City: Toronto
+      Country: Canada
+      TaxID: CA-9876543
+      PaymentTerms: NET15
+      VendorStatus: Active
+      EffectiveStart: '2023-02-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-02-01T00:00:00'
+      DW_UpdateDate: '2023-02-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S2
+      ProductName: Office Chair
+      Description: Ergonomic chair
+      UnitOfMeasure: EA
+      Category: Office
+      AccountingType: Indirect
+      GLAccount: '00000'
+      EffectiveStart: '2022-03-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-03-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S2
+      FullName: Mary Stocker
+      Email: mstocker@test.com
+      Department: Operations
+      JobTitle: Store Keeper
+      IsActive: 1
+      EffectiveStart: '2021-09-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2021-09-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-SUPP-03
+      LocationName: Supply Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Toronto
+      StateProvince: null
+      Country: Canada
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 2
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 2
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S2
+      PO_BK: TST-PO-S2
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 133
+      Product_SK: 74
+      Location_SK: 2
+      ReceivedBy_Employee_SK: 105
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '5.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+- name: test_two_receipts_same_poline_cumulative
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S3A
+      POID: 8021
+      ReceivedByID: 10019
+      ReceiptDate: '2024-05-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-05-01T09:00:00'
+    - GRNumber: TST-GR-S3B
+      POID: 8021
+      ReceivedByID: 10019
+      ReceiptDate: '2024-05-10'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-05-10T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 10
+      POLineID: 8022
+      QuantityReceived: 4.0
+      Notes: null
+    - GRID: 11
+      POLineID: 8022
+      QuantityReceived: 6.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S3
+      RequisitionID: null
+      VendorID: 10043
+      OrderedByID: 304
+      ApprovedByID: null
+      CostCenterID: 102
+      PODate: '2024-04-15'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 1000.0
+      Notes: null
+      CreatedAt: '2024-04-15T08:00:00'
+      UpdatedAt: '2024-05-10T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8021
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3043
+      Quantity: 10.0
+      AgreedUnitPrice: 100.0
+      QuantityReceived: 10.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S3
+      VendorName: Gamma Tech
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United Kingdom
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-03-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S3
+      ItemName: Network Cable
+      Description: null
+      UnitOfMeasure: M
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-05-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S3
+      FullName: Sam Checker
+      Email: schecker@test.com
+      Department: Warehouse
+      JobTitle: Receiving Clerk
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2020-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S3
+      VendorName: Gamma Tech
+      ContactName: Gamma Contact
+      City: London
+      Country: United Kingdom
+      TaxID: UK-1122334
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-03-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-03-01T00:00:00'
+      DW_UpdateDate: '2023-03-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S3
+      ProductName: Network Cable
+      Description: Standard network cable
+      UnitOfMeasure: M
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-05-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-05-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S3
+      FullName: Sam Checker
+      Email: schecker@test.com
+      Department: Warehouse
+      JobTitle: Receiving Clerk
+      IsActive: 1
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: London
+      StateProvince: null
+      Country: United Kingdom
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 3
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 3
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S3A
+      PO_BK: TST-PO-S3
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 134
+      Product_SK: 75
+      Location_SK: 3
+      ReceivedBy_Employee_SK: 106
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '4.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '6.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 10
+      GR_BK: TST-GR-S3B
+      PO_BK: TST-PO-S3
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 134
+      Product_SK: 75
+      Location_SK: 3
+      ReceivedBy_Employee_SK: 106
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '6.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 25
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+- name: test_location_office_item
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S4
+      POID: 8022
+      ReceivedByID: 10020
+      ReceiptDate: '2024-06-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-06-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 12
+      POLineID: 8023
+      QuantityReceived: 3.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S4
+      RequisitionID: null
+      VendorID: 10044
+      OrderedByID: 305
+      ApprovedByID: null
+      CostCenterID: 103
+      PODate: '2024-05-20'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 150.0
+      Notes: null
+      CreatedAt: '2024-05-20T08:00:00'
+      UpdatedAt: '2024-06-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8022
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3044
+      Quantity: 3.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 3.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S4
+      VendorName: Office Plus
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-04-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S4
+      ItemName: Printer Paper
+      Description: null
+      UnitOfMeasure: BOX
+      ItemCategory: Office
+      AccountingType: Indirect
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-07-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S4
+      FullName: Lisa Intake
+      Email: lintake@test.com
+      Department: Admin
+      JobTitle: Admin Clerk
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S4
+      VendorName: Office Plus
+      ContactName: Plus Contact
+      City: Chicago
+      Country: United States
+      TaxID: 99-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-04-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-04-01T00:00:00'
+      DW_UpdateDate: '2023-04-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S4
+      ProductName: Printer Paper
+      Description: A4 paper box
+      UnitOfMeasure: BOX
+      Category: Office
+      AccountingType: Indirect
+      GLAccount: '00000'
+      EffectiveStart: '2022-07-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-07-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S4
+      FullName: Lisa Intake
+      Email: lintake@test.com
+      Department: Admin
+      JobTitle: Admin Clerk
+      IsActive: 1
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-SUPP-03
+      LocationName: Supply Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Chicago
+      StateProvince: IL
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 4
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 4
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S4
+      PO_BK: TST-PO-S4
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 135
+      Product_SK: 76
+      Location_SK: 4
+      ReceivedBy_Employee_SK: 107
+      GR_Status: Posted
+      Quantity_Ordered: '3.000'
+      Quantity_This_Receipt: '3.000'
+      Cumulative_Qty_Received: '3.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 12
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:00'
+- name: test_location_hardware_switch
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S5
+      POID: 8023
+      ReceivedByID: 10021
+      ReceiptDate: '2024-07-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-07-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 13
+      POLineID: 8024
+      QuantityReceived: 2.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S5
+      RequisitionID: null
+      VendorID: 10045
+      OrderedByID: 306
+      ApprovedByID: null
+      CostCenterID: 104
+      PODate: '2024-06-15'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 600.0
+      Notes: null
+      CreatedAt: '2024-06-15T08:00:00'
+      UpdatedAt: '2024-07-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8023
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3045
+      Quantity: 2.0
+      AgreedUnitPrice: 300.0
+      QuantityReceived: 2.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S5
+      VendorName: NetEquip Ltd
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-05-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-SWITCH-S5
+      ItemName: Network Switch 24Port
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-09-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S5
+      FullName: Tom Netops
+      Email: tnetops@test.com
+      Department: IT
+      JobTitle: Network Technician
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2021-06-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S5
+      VendorName: NetEquip Ltd
+      ContactName: Net Contact
+      City: Seattle
+      Country: United States
+      TaxID: 55-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-05-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-05-01T00:00:00'
+      DW_UpdateDate: '2023-05-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-SWITCH-S5
+      ProductName: Network Switch 24Port
+      Description: 24-port managed switch
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-09-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-09-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S5
+      FullName: Tom Netops
+      Email: tnetops@test.com
+      Department: IT
+      JobTitle: Network Technician
+      IsActive: 1
+      EffectiveStart: '2021-06-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2021-06-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-NET-04
+      LocationName: Network Equipment Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Seattle
+      StateProvince: WA
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 5
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 5
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 5
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 5
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S5
+      PO_BK: TST-PO-S5
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 136
+      Product_SK: 77
+      Location_SK: 5
+      ReceivedBy_Employee_SK: 108
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+- name: test_location_else_corp
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S6
+      POID: 8024
+      ReceivedByID: 10022
+      ReceiptDate: '2024-08-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-08-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 14
+      POLineID: 8025
+      QuantityReceived: 1.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S6
+      RequisitionID: null
+      VendorID: 10046
+      OrderedByID: 307
+      ApprovedByID: null
+      CostCenterID: 105
+      PODate: '2024-07-20'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-07-20T08:00:00'
+      UpdatedAt: '2024-08-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8024
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3046
+      Quantity: 1.0
+      AgreedUnitPrice: 200.0
+      QuantityReceived: 1.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S6
+      VendorName: Services Inc
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-06-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S6
+      ItemName: Consulting License
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Services
+      AccountingType: Indirect
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-10-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S6
+      FullName: Alice Manager
+      Email: amanager@test.com
+      Department: Procurement
+      JobTitle: Procurement Manager
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2019-03-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S6
+      VendorName: Services Inc
+      ContactName: Svc Contact
+      City: New York
+      Country: United States
+      TaxID: 77-7654321
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-06-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-06-01T00:00:00'
+      DW_UpdateDate: '2023-06-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S6
+      ProductName: Consulting License
+      Description: Annual consulting license
+      UnitOfMeasure: EA
+      Category: Services
+      AccountingType: Indirect
+      GLAccount: '00000'
+      EffectiveStart: '2022-10-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-10-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S6
+      FullName: Alice Manager
+      Email: amanager@test.com
+      Department: Procurement
+      JobTitle: Procurement Manager
+      IsActive: 1
+      EffectiveStart: '2019-03-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2019-03-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-CORP-01
+      LocationName: Corporate Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: New York
+      StateProvince: NY
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S6
+      PO_BK: TST-PO-S6
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 137
+      Product_SK: 78
+      Location_SK: 6
+      ReceivedBy_Employee_SK: 109
+      GR_Status: Posted
+      Quantity_Ordered: '1.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '1.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 12
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+- name: test_vendor_not_in_dim_vendor
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S7
+      POID: 8025
+      ReceivedByID: 10023
+      ReceiptDate: '2024-09-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-09-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 15
+      POLineID: 8026
+      QuantityReceived: 5.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S7
+      RequisitionID: null
+      VendorID: 10047
+      OrderedByID: 308
+      ApprovedByID: null
+      CostCenterID: 106
+      PODate: '2024-08-15'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-08-15T08:00:00'
+      UpdatedAt: '2024-09-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8025
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3047
+      Quantity: 5.0
+      AgreedUnitPrice: 100.0
+      QuantityReceived: 5.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S7-MISS
+      VendorName: Unknown Vendor
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2024-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S7
+      ItemName: Generic Item
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S7
+      FullName: Bob Worker
+      Email: bworker@test.com
+      Department: Warehouse
+      JobTitle: Warehouse Staff
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S7
+      ProductName: Generic Item
+      Description: Generic hardware item
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S7
+      FullName: Bob Worker
+      Email: bworker@test.com
+      Department: Warehouse
+      JobTitle: Warehouse Staff
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Dallas
+      StateProvince: TX
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 7
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 7
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S7
+      PO_BK: TST-PO-S7
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: 79
+      Location_SK: 7
+      ReceivedBy_Employee_SK: 110
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '5.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 17
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:01'
+- name: test_vendor_dim_iscurrent_zero_miss
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S8
+      POID: 8026
+      ReceivedByID: 10024
+      ReceiptDate: '2024-10-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-10-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 16
+      POLineID: 8027
+      QuantityReceived: 8.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S8
+      RequisitionID: null
+      VendorID: 10048
+      OrderedByID: 309
+      ApprovedByID: null
+      CostCenterID: 107
+      PODate: '2024-09-10'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 400.0
+      Notes: null
+      CreatedAt: '2024-09-10T08:00:00'
+      UpdatedAt: '2024-10-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8026
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3048
+      Quantity: 8.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 8.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S8
+      VendorName: Expired Vendor
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Inactive
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S8
+      ItemName: Hardware Part
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S8
+      FullName: Dave Receiver
+      Email: dreceiver@test.com
+      Department: Warehouse
+      JobTitle: Receiver
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S8
+      VendorName: Expired Vendor Old
+      ContactName: Old Contact
+      City: Miami
+      Country: United States
+      TaxID: EX-9999999
+      PaymentTerms: NET30
+      VendorStatus: Inactive
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '2023-12-31'
+      IsCurrent: 0
+      DW_InsertDate: '2022-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S8
+      ProductName: Hardware Part
+      Description: Standard hardware part
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S8
+      FullName: Dave Receiver
+      Email: dreceiver@test.com
+      Department: Warehouse
+      JobTitle: Receiver
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Miami
+      StateProvince: FL
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 8
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 8
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S8
+      PO_BK: TST-PO-S8
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: 80
+      Location_SK: 8
+      ReceivedBy_Employee_SK: 111
+      GR_Status: Posted
+      Quantity_Ordered: '8.000'
+      Quantity_This_Receipt: '8.000'
+      Cumulative_Qty_Received: '8.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+- name: test_product_not_in_dim_product
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S9
+      POID: 8027
+      ReceivedByID: 10025
+      ReceiptDate: '2024-11-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-11-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 17
+      POLineID: 8028
+      QuantityReceived: 2.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S9
+      RequisitionID: null
+      VendorID: 10049
+      OrderedByID: 310
+      ApprovedByID: null
+      CostCenterID: 108
+      PODate: '2024-10-15'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 100.0
+      Notes: null
+      CreatedAt: '2024-10-15T08:00:00'
+      UpdatedAt: '2024-11-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8027
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3049
+      Quantity: 2.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 2.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S9
+      VendorName: Delta Supplies
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-07-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S9-MISS
+      ItemName: Unknown Product
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2024-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S9
+      FullName: Eve Goods
+      Email: egoods@test.com
+      Department: Warehouse
+      JobTitle: Goods Handler
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S9
+      VendorName: Delta Supplies
+      ContactName: Delta Contact
+      City: Phoenix
+      Country: United States
+      TaxID: 33-3333333
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-07-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-07-01T00:00:00'
+      DW_UpdateDate: '2023-07-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S9
+      FullName: Eve Goods
+      Email: egoods@test.com
+      Department: Warehouse
+      JobTitle: Goods Handler
+      IsActive: 1
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Phoenix
+      StateProvince: AZ
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 9
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 9
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S9
+      PO_BK: TST-PO-S9
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 139
+      Product_SK: -1
+      Location_SK: 9
+      ReceivedBy_Employee_SK: 112
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 17
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+- name: test_employee_dim_iscurrent_zero_miss
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S10
+      POID: 8028
+      ReceivedByID: 10026
+      ReceiptDate: '2024-12-01'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-12-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 18
+      POLineID: 8029
+      QuantityReceived: 7.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S10
+      RequisitionID: null
+      VendorID: 10050
+      OrderedByID: 311
+      ApprovedByID: null
+      CostCenterID: 109
+      PODate: '2024-11-10'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 350.0
+      Notes: null
+      CreatedAt: '2024-11-10T08:00:00'
+      UpdatedAt: '2024-12-01T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8028
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3050
+      Quantity: 7.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 7.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S10
+      VendorName: Epsilon Corp
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-08-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S10
+      ItemName: Steel Bracket
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S10
+      FullName: Frank Ex
+      Email: frank@test.com
+      Department: Warehouse
+      JobTitle: Former Receiver
+      ManagerID: null
+      IsActive: 0
+      CreatedAt: '2020-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S10
+      VendorName: Epsilon Corp
+      ContactName: Eps Contact
+      City: Houston
+      Country: United States
+      TaxID: 44-4444444
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-08-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-08-01T00:00:00'
+      DW_UpdateDate: '2023-08-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S10
+      ProductName: Steel Bracket
+      Description: Standard steel bracket
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S10
+      FullName: Frank Ex
+      Email: frank@test.com
+      Department: Warehouse
+      JobTitle: Former Receiver
+      IsActive: 0
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '2023-12-31'
+      IsCurrent: 0
+      DW_InsertDate: '2020-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Houston
+      StateProvince: TX
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 10
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 10
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S10
+      PO_BK: TST-PO-S10
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 140
+      Product_SK: 81
+      Location_SK: 10
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '7.000'
+      Quantity_This_Receipt: '7.000'
+      Cumulative_Qty_Received: '7.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+- name: test_receipt_date_not_in_dim_date
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S11
+      POID: 8029
+      ReceivedByID: 10027
+      ReceiptDate: '2024-12-25'
+      GRStatus: Posted
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2024-12-25T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 19
+      POLineID: 8030
+      QuantityReceived: 4.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S11
+      RequisitionID: null
+      VendorID: 10051
+      OrderedByID: 312
+      ApprovedByID: null
+      CostCenterID: 110
+      PODate: '2024-12-01'
+      ExpectedDelivery: null
+      POStatus: Received
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-12-01T08:00:00'
+      UpdatedAt: '2024-12-25T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8029
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3051
+      Quantity: 4.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 4.0
+      QuantityInvoiced: 0.0
+      LineStatus: Received
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S11
+      VendorName: Zeta Goods
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-09-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S11
+      ItemName: Spare Cable
+      Description: null
+      UnitOfMeasure: M
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S11
+      FullName: Grace Intake
+      Email: gintake@test.com
+      Department: Warehouse
+      JobTitle: Stock Clerk
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-05-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S11
+      VendorName: Zeta Goods
+      ContactName: Zeta Contact
+      City: Portland
+      Country: United States
+      TaxID: 66-6666666
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-09-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-09-01T00:00:00'
+      DW_UpdateDate: '2023-09-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S11
+      ProductName: Spare Cable
+      Description: Standard cable
+      UnitOfMeasure: M
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S11
+      FullName: Grace Intake
+      Email: gintake@test.com
+      Department: Warehouse
+      JobTitle: Stock Clerk
+      IsActive: 1
+      EffectiveStart: '2022-05-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-05-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Location')
+    rows:
+    - Location_BK: WH-IT-02
+      LocationName: IT Warehouse
+      LocationType: Warehouse
+      AddressLine1: null
+      City: Portland
+      StateProvince: OR
+      Country: United States
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2020-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 11
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: 11
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 9
+      GR_BK: TST-GR-S11
+      PO_BK: TST-PO-S11
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: 141
+      Product_SK: 82
+      Location_SK: 11
+      ReceivedBy_Employee_SK: 114
+      GR_Status: Posted
+      Quantity_Ordered: '4.000'
+      Quantity_This_Receipt: '4.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 24
+      Delivery_Variance_Days: null
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+- name: test_gr_status_non_posted_excluded
+  model: stg_fact_inventory_receipt
+  given:
+  - input: '[PTP_System].[Purchasing].[GoodsReceipts]'
+    rows:
+    - GRNumber: TST-GR-S12
+      POID: 8030
+      ReceivedByID: 10028
+      ReceiptDate: '2025-01-05'
+      GRStatus: Reversed
+      DeliveryNote: null
+      Notes: null
+      CreatedAt: '2025-01-05T09:00:00'
+  - input: '[PTP_System].[Purchasing].[GoodsReceiptLines]'
+    rows:
+    - GRID: 20
+      POLineID: 8031
+      QuantityReceived: 3.0
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S12
+      RequisitionID: null
+      VendorID: 10052
+      OrderedByID: 313
+      ApprovedByID: null
+      CostCenterID: 111
+      PODate: '2024-12-20'
+      ExpectedDelivery: null
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 150.0
+      Notes: null
+      CreatedAt: '2024-12-20T08:00:00'
+      UpdatedAt: '2025-01-05T09:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8030
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3052
+      Quantity: 3.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S12
+      VendorName: Reversed Vendor
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-10-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S12
+      ItemName: Returned Item
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S12
+      FullName: Hank Returns
+      Email: hreturns@test.com
+      Department: Warehouse
+      JobTitle: Returns Clerk
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+- name: test_empty_source_no_rows_inserted
+  model: stg_fact_inventory_receipt
+  given: []
+  expect:
+    rows:
+    - Fact_Receipt_SK: 1
+      GR_BK: GR-2026-0001
+      PO_BK: PO-2026-0001
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 16
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 2
+      GR_BK: GR-2026-0002
+      PO_BK: PO-2026-0002
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '100.000'
+      Quantity_This_Receipt: '40.000'
+      Cumulative_Qty_Received: '40.000'
+      Quantity_Outstanding: '60.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 15
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 3
+      GR_BK: GR-2026-0003
+      PO_BK: PO-2026-0003
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '10.000'
+      Quantity_This_Receipt: '10.000'
+      Cumulative_Qty_Received: '10.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 22
+      Delivery_Variance_Days: -2
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 4
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '2.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 5
+      GR_BK: GR-2026-0004
+      PO_BK: PO-2026-0004
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '50.000'
+      Quantity_This_Receipt: '50.000'
+      Cumulative_Qty_Received: '50.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 14
+      Delivery_Variance_Days: -1
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 6
+      GR_BK: GR-2026-0005
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '2.000'
+      Quantity_Outstanding: '3.000'
+      Receipt_Completeness_Pct: '40.00'
+      Lead_Time_Days: 21
+      Delivery_Variance_Days: 7
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 7
+      GR_BK: GR-2026-0006
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '2.000'
+      Cumulative_Qty_Received: '4.000'
+      Quantity_Outstanding: '1.000'
+      Receipt_Completeness_Pct: '80.00'
+      Lead_Time_Days: 26
+      Delivery_Variance_Days: 12
+      DW_Load_DateTime: '2026-04-07 06:30:02'
+    - Fact_Receipt_SK: 8
+      GR_BK: GR-2026-0007
+      PO_BK: PO-2026-0005
+      ReceiptDate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Location_SK: -1
+      ReceivedBy_Employee_SK: -1
+      GR_Status: Posted
+      Quantity_Ordered: '5.000'
+      Quantity_This_Receipt: '1.000'
+      Cumulative_Qty_Received: '5.000'
+      Quantity_Outstanding: '0.000'
+      Receipt_Completeness_Pct: '100.00'
+      Lead_Time_Days: 34
+      Delivery_Variance_Days: 20
+      DW_Load_DateTime: '2026-04-07 06:30:02'

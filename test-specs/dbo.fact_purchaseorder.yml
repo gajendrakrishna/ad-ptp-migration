@@ -1,0 +1,2980 @@
+unit_tests:
+- name: test_happy_path_full_requisition
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S1
+      RequisitionID: 7
+      VendorID: 10053
+      OrderedByID: 10029
+      ApprovedByID: 10030
+      CostCenterID: 100
+      PODate: '2024-01-15'
+      ExpectedDelivery: '2024-02-15'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8031
+      LineNumber: 1
+      RequisitionLineID: 9
+      ItemID: 3053
+      Quantity: 10.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S1
+      VendorName: Acme Corp
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S1
+      ItemName: Widget A
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S1B
+      FullName: Bob Buyer
+      Email: tst-emp-s1b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+    - EmployeeCode: TST-EMP-S1A
+      FullName: Anna Approver
+      Email: tst-emp-s1a@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[Requisitions]'
+    rows:
+    - RequisitionNumber: TST-REQ-S1
+      RequestedByID: 10029
+      ApprovedByID: null
+      CostCenterID: 100
+      RequisitionDate: '2024-01-10'
+      RequiredByDate: null
+      RequisitionStatus: Approved
+      RejectionReason: null
+      TotalAmount: 450.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[RequisitionLines]'
+    rows:
+    - RequisitionID: 7
+      LineNumber: 1
+      ItemID: 3053
+      Quantity: 10.0
+      EstimatedUnitPrice: 45.0
+      SuggestedVendorID: null
+      Notes: null
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240115
+      FullDate: '2024-01-15'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 15
+      DayOfYear: 15
+      WeekOfYear: 3
+      MonthNumber: 1
+      MonthName: January
+      MonthShort: Jan
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202401
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 1
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240215
+      FullDate: '2024-02-15'
+      DayName: Monday
+      DayOfWeek: 5
+      DayOfMonth: 15
+      DayOfYear: 46
+      WeekOfYear: 7
+      MonthNumber: 2
+      MonthName: February
+      MonthShort: Feb
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202402
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 2
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S1
+      VendorName: Acme Corp
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S1
+      ProductName: Widget A
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S1B
+      FullName: Bob Buyer
+      Email: tst-emp-s1b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+    - Employee_BK: TST-EMP-S1A
+      FullName: Anna Approver
+      Email: tst-emp-s1a@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+- name: test_no_requisition
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S2
+      RequisitionID: null
+      VendorID: 10054
+      OrderedByID: 10031
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-02-01'
+      ExpectedDelivery: '2024-03-01'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8032
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3054
+      Quantity: 5.0
+      AgreedUnitPrice: 100.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S2
+      VendorName: Beta Supplies
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S2
+      ItemName: Cable Bundle
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S2B
+      FullName: Carol Buyer
+      Email: tst-emp-s2b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240201
+      FullDate: '2024-02-01'
+      DayName: Monday
+      DayOfWeek: 5
+      DayOfMonth: 1
+      DayOfYear: 32
+      WeekOfYear: 5
+      MonthNumber: 2
+      MonthName: February
+      MonthShort: Feb
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202402
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 2
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240301
+      FullDate: '2024-03-01'
+      DayName: Monday
+      DayOfWeek: 6
+      DayOfMonth: 1
+      DayOfYear: 61
+      WeekOfYear: 9
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S2
+      VendorName: Beta Supplies
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S2
+      ProductName: Cable Bundle
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S2B
+      FullName: Carol Buyer
+      Email: tst-emp-s2b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:41'
+- name: test_req_but_no_req_line
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S3
+      RequisitionID: 8
+      VendorID: 10055
+      OrderedByID: 10032
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-02-10'
+      ExpectedDelivery: '2024-03-10'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8033
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3055
+      Quantity: 3.0
+      AgreedUnitPrice: 75.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S3
+      VendorName: Gamma Tech
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S3
+      ItemName: Monitor
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S3B
+      FullName: Dave Buyer
+      Email: tst-emp-s3b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[Requisitions]'
+    rows:
+    - RequisitionNumber: TST-REQ-S3
+      RequestedByID: 10032
+      ApprovedByID: null
+      CostCenterID: 100
+      RequisitionDate: '2024-02-05'
+      RequiredByDate: null
+      RequisitionStatus: Approved
+      RejectionReason: null
+      TotalAmount: 225.0
+      Notes: null
+      CreatedAt: '2024-02-05T00:00:00'
+      UpdatedAt: '2024-02-05T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240210
+      FullDate: '2024-02-10'
+      DayName: Monday
+      DayOfWeek: 7
+      DayOfMonth: 10
+      DayOfYear: 41
+      WeekOfYear: 6
+      MonthNumber: 2
+      MonthName: February
+      MonthShort: Feb
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202402
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 2
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240310
+      FullDate: '2024-03-10'
+      DayName: Monday
+      DayOfWeek: 1
+      DayOfMonth: 10
+      DayOfYear: 70
+      WeekOfYear: 10
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S3
+      VendorName: Gamma Tech
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S3
+      ProductName: Monitor
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S3B
+      FullName: Dave Buyer
+      Email: tst-emp-s3b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+- name: test_price_variance_negative
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S4
+      RequisitionID: 9
+      VendorID: 10056
+      OrderedByID: 10033
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-03-01'
+      ExpectedDelivery: '2024-04-01'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8034
+      LineNumber: 1
+      RequisitionLineID: 10
+      ItemID: 3056
+      Quantity: 20.0
+      AgreedUnitPrice: 60.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S4
+      VendorName: Delta Parts
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S4
+      ItemName: Keyboard
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S4B
+      FullName: Eve Buyer
+      Email: tst-emp-s4b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[Requisitions]'
+    rows:
+    - RequisitionNumber: TST-REQ-S4
+      RequestedByID: 10033
+      ApprovedByID: null
+      CostCenterID: 100
+      RequisitionDate: '2024-02-25'
+      RequiredByDate: null
+      RequisitionStatus: Approved
+      RejectionReason: null
+      TotalAmount: 1000.0
+      Notes: null
+      CreatedAt: '2024-02-25T00:00:00'
+      UpdatedAt: '2024-02-25T00:00:00'
+  - input: '[PTP_System].[Purchasing].[RequisitionLines]'
+    rows:
+    - RequisitionID: 9
+      LineNumber: 1
+      ItemID: 3056
+      Quantity: 20.0
+      EstimatedUnitPrice: 40.0
+      SuggestedVendorID: null
+      Notes: null
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240301
+      FullDate: '2024-03-01'
+      DayName: Monday
+      DayOfWeek: 6
+      DayOfMonth: 1
+      DayOfYear: 61
+      WeekOfYear: 9
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240401
+      FullDate: '2024-04-01'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 1
+      DayOfYear: 92
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S4
+      VendorName: Delta Parts
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S4
+      ProductName: Keyboard
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S4B
+      FullName: Eve Buyer
+      Email: tst-emp-s4b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+- name: test_approver_absent
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S5
+      RequisitionID: 10
+      VendorID: 10057
+      OrderedByID: 10034
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-03-05'
+      ExpectedDelivery: '2024-04-05'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8035
+      LineNumber: 1
+      RequisitionLineID: 11
+      ItemID: 3057
+      Quantity: 8.0
+      AgreedUnitPrice: 25.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S5
+      VendorName: Epsilon Inc
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S5
+      ItemName: Mouse
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S5B
+      FullName: Frank Buyer
+      Email: tst-emp-s5b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[Requisitions]'
+    rows:
+    - RequisitionNumber: TST-REQ-S5
+      RequestedByID: 10034
+      ApprovedByID: null
+      CostCenterID: 100
+      RequisitionDate: '2024-03-01'
+      RequiredByDate: null
+      RequisitionStatus: Approved
+      RejectionReason: null
+      TotalAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-03-01T00:00:00'
+      UpdatedAt: '2024-03-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[RequisitionLines]'
+    rows:
+    - RequisitionID: 10
+      LineNumber: 1
+      ItemID: 3057
+      Quantity: 8.0
+      EstimatedUnitPrice: 30.0
+      SuggestedVendorID: null
+      Notes: null
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240305
+      FullDate: '2024-03-05'
+      DayName: Monday
+      DayOfWeek: 3
+      DayOfMonth: 5
+      DayOfYear: 65
+      WeekOfYear: 10
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240405
+      FullDate: '2024-04-05'
+      DayName: Monday
+      DayOfWeek: 6
+      DayOfMonth: 5
+      DayOfYear: 96
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S5
+      VendorName: Epsilon Inc
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S5
+      ProductName: Mouse
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S5B
+      FullName: Frank Buyer
+      Email: tst-emp-s5b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+- name: test_approver_not_in_dim_employee
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S6
+      RequisitionID: 11
+      VendorID: 10058
+      OrderedByID: 10035
+      ApprovedByID: 10036
+      CostCenterID: 100
+      PODate: '2024-03-10'
+      ExpectedDelivery: '2024-04-10'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8036
+      LineNumber: 1
+      RequisitionLineID: 12
+      ItemID: 3058
+      Quantity: 6.0
+      AgreedUnitPrice: 80.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S6
+      VendorName: Zeta Corp
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S6
+      ItemName: Desk Chair
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S6B
+      FullName: Grace Buyer
+      Email: tst-emp-s6b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+    - EmployeeCode: TST-EMP-S6A
+      FullName: Harry Approver
+      Email: tst-emp-s6a@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: '[PTP_System].[Purchasing].[Requisitions]'
+    rows:
+    - RequisitionNumber: TST-REQ-S6
+      RequestedByID: 10035
+      ApprovedByID: null
+      CostCenterID: 100
+      RequisitionDate: '2024-03-05'
+      RequiredByDate: null
+      RequisitionStatus: Approved
+      RejectionReason: null
+      TotalAmount: 480.0
+      Notes: null
+      CreatedAt: '2024-03-05T00:00:00'
+      UpdatedAt: '2024-03-05T00:00:00'
+  - input: '[PTP_System].[Purchasing].[RequisitionLines]'
+    rows:
+    - RequisitionID: 11
+      LineNumber: 1
+      ItemID: 3058
+      Quantity: 6.0
+      EstimatedUnitPrice: 78.0
+      SuggestedVendorID: null
+      Notes: null
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240310
+      FullDate: '2024-03-10'
+      DayName: Monday
+      DayOfWeek: 1
+      DayOfMonth: 10
+      DayOfYear: 70
+      WeekOfYear: 10
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240410
+      FullDate: '2024-04-10'
+      DayName: Monday
+      DayOfWeek: 4
+      DayOfMonth: 10
+      DayOfYear: 101
+      WeekOfYear: 15
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S6
+      VendorName: Zeta Corp
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S6
+      ProductName: Desk Chair
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S6B
+      FullName: Grace Buyer
+      Email: tst-emp-s6b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:42'
+- name: test_po_date_not_in_dim_date
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S7
+      RequisitionID: null
+      VendorID: 10059
+      OrderedByID: 10037
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2099-01-01'
+      ExpectedDelivery: '2099-02-01'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8037
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3059
+      Quantity: 1.0
+      AgreedUnitPrice: 10.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S7
+      VendorName: Eta Ltd
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S7
+      ItemName: Pencil Box
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S7B
+      FullName: Ian Buyer
+      Email: tst-emp-s7b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S7
+      VendorName: Eta Ltd
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S7
+      ProductName: Pencil Box
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S7B
+      FullName: Ian Buyer
+      Email: tst-emp-s7b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+- name: test_vendor_not_in_dim_vendor
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S8
+      RequisitionID: null
+      VendorID: 10060
+      OrderedByID: 10038
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-04-01'
+      ExpectedDelivery: '2024-05-01'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8038
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3060
+      Quantity: 2.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S8
+      VendorName: Unknown Vendor
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S8
+      ItemName: Stapler
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S8B
+      FullName: Jane Buyer
+      Email: tst-emp-s8b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240401
+      FullDate: '2024-04-01'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 1
+      DayOfYear: 92
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240501
+      FullDate: '2024-05-01'
+      DayName: Monday
+      DayOfWeek: 4
+      DayOfMonth: 1
+      DayOfYear: 122
+      WeekOfYear: 18
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S8
+      ProductName: Stapler
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S8B
+      FullName: Jane Buyer
+      Email: tst-emp-s8b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+- name: test_product_not_in_dim_product
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S9
+      RequisitionID: null
+      VendorID: 10061
+      OrderedByID: 10039
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-04-05'
+      ExpectedDelivery: '2024-05-05'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8039
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3061
+      Quantity: 15.0
+      AgreedUnitPrice: 30.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S9
+      VendorName: Theta Supplies
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S9
+      ItemName: Unknown Item
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S9B
+      FullName: Kate Buyer
+      Email: tst-emp-s9b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240405
+      FullDate: '2024-04-05'
+      DayName: Monday
+      DayOfWeek: 6
+      DayOfMonth: 5
+      DayOfYear: 96
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240505
+      FullDate: '2024-05-05'
+      DayName: Monday
+      DayOfWeek: 1
+      DayOfMonth: 5
+      DayOfYear: 126
+      WeekOfYear: 18
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S9
+      VendorName: Theta Supplies
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Employee')
+    rows:
+    - Employee_BK: TST-EMP-S9B
+      FullName: Kate Buyer
+      Email: tst-emp-s9b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      IsActive: 1
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:43'
+- name: test_buyer_employee_miss
+  model: stg_fact_purchaseorder
+  given:
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S10
+      RequisitionID: null
+      VendorID: 10062
+      OrderedByID: 10040
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-04-10'
+      ExpectedDelivery: '2024-05-10'
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-01-10T00:00:00'
+      UpdatedAt: '2024-01-10T00:00:00'
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8040
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3062
+      Quantity: 5.0
+      AgreedUnitPrice: 200.0
+      QuantityReceived: 0.0
+      QuantityInvoiced: 0.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S10
+      VendorName: Iota Partners
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: null
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S10
+      ItemName: Laptop Stand
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Employees]'
+    rows:
+    - EmployeeCode: TST-EMP-S10B
+      FullName: Liam Buyer
+      Email: tst-emp-s10b@test.com
+      Department: Procurement
+      JobTitle: Buyer
+      ManagerID: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240410
+      FullDate: '2024-04-10'
+      DayName: Monday
+      DayOfWeek: 4
+      DayOfMonth: 10
+      DayOfYear: 101
+      WeekOfYear: 15
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240510
+      FullDate: '2024-05-10'
+      DayName: Monday
+      DayOfWeek: 6
+      DayOfMonth: 10
+      DayOfYear: 131
+      WeekOfYear: 19
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S10
+      VendorName: Iota Partners
+      ContactName: ''
+      City: ''
+      Country: United States
+      TaxID: ''
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S10
+      ProductName: Laptop Stand
+      Description: ''
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '50000'
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+- name: test_empty_source
+  model: stg_fact_purchaseorder
+  given: []
+  expect:
+    rows:
+    - Fact_PO_SK: 1
+      PO_BK: PO-2026-0001
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0001
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Closed
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '1225.0000'
+      PO_Line_Total: '12250.00'
+      Estimated_Unit_Price: '1250.0000'
+      Price_Savings_vs_Estimate: '250.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 2
+      PO_BK: PO-2026-0002
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0002
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: PartiallyReceived
+      Quantity_Ordered: '100.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '1050.00'
+      Estimated_Unit_Price: '11.0000'
+      Price_Savings_vs_Estimate: '50.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 3
+      PO_BK: PO-2026-0003
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0003
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '10.000'
+      Agreed_Unit_Price: '499.0000'
+      PO_Line_Total: '4990.00'
+      Estimated_Unit_Price: '500.0000'
+      Price_Savings_vs_Estimate: '10.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 4
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '2.000'
+      Agreed_Unit_Price: '430.0000'
+      PO_Line_Total: '860.00'
+      Estimated_Unit_Price: '450.0000'
+      Price_Savings_vs_Estimate: '40.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 5
+      PO_BK: PO-2026-0004
+      PO_Line_Number: 2
+      Requisition_BK: REQ-2026-0004
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '50.000'
+      Agreed_Unit_Price: '11.1000'
+      PO_Line_Total: '555.00'
+      Estimated_Unit_Price: '12.0000'
+      Price_Savings_vs_Estimate: '45.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 6
+      PO_BK: PO-2026-0005
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: FullyReceived
+      Quantity_Ordered: '5.000'
+      Agreed_Unit_Price: '494.0000'
+      PO_Line_Total: '2470.00'
+      Estimated_Unit_Price: '510.0000'
+      Price_Savings_vs_Estimate: '80.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
+    - Fact_PO_SK: 7
+      PO_BK: PO-2026-0006
+      PO_Line_Number: 1
+      Requisition_BK: REQ-2026-0006
+      PODate_SK: 0
+      ExpectedDelivery_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Buyer_Employee_SK: -1
+      Approver_Employee_SK: -1
+      PO_Status: Invoiced
+      Quantity_Ordered: '20.000'
+      Agreed_Unit_Price: '10.5000'
+      PO_Line_Total: '210.00'
+      Estimated_Unit_Price: '11.5000'
+      Price_Savings_vs_Estimate: '20.00'
+      Approval_Duration_Days: 2
+      DW_Load_DateTime: '2026-04-07 06:38:44'
