@@ -510,5 +510,102 @@
       "dbo.Dim_Product",
       "dbo.Dim_Employee"
     ]
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_fact_po",
+    "classification": {
+      "resolved_kind": "fact_transaction",
+      "source": "llm",
+      "rationale": "The writer proc uses TRUNCATE + INSERT with a transactional grain of one row per PO line, multiple FK surrogate key columns, and numeric measure columns; no snapshot date, aggregation, MERGE, or accumulating milestone pattern is present."
+    },
+    "primary_key": {
+      "columns": [
+        "Fact_PO_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares constraint PK_Fact_PO on Fact_PO_SK, which is also an IDENTITY column confirming it as a system-assigned surrogate key."
+    },
+    "natural_key": {
+      "columns": [
+        "PO_BK",
+        "PO_Line_Number"
+      ],
+      "source": "llm",
+      "rationale": "The proc inserts PONumber as PO_BK and LineNumber as PO_Line_Number from the source PurchaseOrders and PurchaseOrderLines tables, forming the unique business grain for a PO line."
+    },
+    "watermark": {
+      "column": "DW_Load_DateTime",
+      "source": "llm",
+      "rationale": "The proc performs a full TRUNCATE + INSERT with no incremental filter; DW_Load_DateTime is the only load-timestamp column and represents the best watermark candidate, though full table materialization is recommended given the full-reload pattern."
+    },
+    "foreign_keys": [
+      {
+        "column": "Buyer_Employee_SK",
+        "referenced_table": "dbo.Dim_Employee",
+        "referenced_column": "Employee_SK",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_Buyer; both Buyer_Employee_SK and Approver_Employee_SK join Dim_Employee, making this a role-playing dimension."
+      },
+      {
+        "column": "Approver_Employee_SK",
+        "referenced_table": "dbo.Dim_Employee",
+        "referenced_column": "Employee_SK",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_Approver; second role on Dim_Employee alongside Buyer_Employee_SK, confirming role-playing pattern."
+      },
+      {
+        "column": "PODate_SK",
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_column": "Date_SK",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_PODate; both PODate_SK and ExpectedDelivery_SK join Dim_Date, making this a role-playing dimension."
+      },
+      {
+        "column": "ExpectedDelivery_SK",
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_column": "Date_SK",
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_ExpDel; second role on Dim_Date alongside PODate_SK, confirming role-playing pattern."
+      },
+      {
+        "column": "Product_SK",
+        "referenced_table": "dbo.Dim_Product",
+        "referenced_column": "Product_SK",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_Product; single column joining one dimension with no multi-role pattern."
+      },
+      {
+        "column": "Vendor_SK",
+        "referenced_table": "dbo.Dim_Vendor",
+        "referenced_column": "Vendor_SK",
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Declared FK FK_FactPO_Vendor; single column joining one dimension with no multi-role pattern."
+      },
+      {
+        "column": "PO_BK",
+        "referenced_table": null,
+        "referenced_column": null,
+        "fk_type": "degenerate",
+        "source": "llm",
+        "rationale": "VARCHAR business key (PONumber from source) stored directly in the fact table with no corresponding dimension join target."
+      },
+      {
+        "column": "Requisition_BK",
+        "referenced_table": null,
+        "referenced_column": null,
+        "fk_type": "degenerate",
+        "source": "llm",
+        "rationale": "Nullable VARCHAR business key (RequisitionNumber from source) stored directly in the fact table with no corresponding dimension join target."
+      }
+    ],
+    "pii_actions": []
   }
 }
