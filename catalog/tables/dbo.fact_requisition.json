@@ -391,5 +391,42 @@
       "in_scope": [],
       "out_of_scope": []
     }
+  },
+  "scoping": {
+    "table": "dbo.fact_requisition",
+    "selected_writer": "etl.usp_load_fact_requisition",
+    "status": "resolved",
+    "writer_analysis": {
+      "procedure": "etl.usp_load_fact_requisition",
+      "write_type": "direct",
+      "pattern": "truncate_insert",
+      "sources": [
+        "PTP_System.Purchasing.Requisitions",
+        "PTP_System.Purchasing.RequisitionLines",
+        "PTP_System.Master.Employees",
+        "PTP_System.Master.Items",
+        "PTP_System.Master.Vendors"
+      ],
+      "dimension_lookups": [
+        "dbo.Dim_Date",
+        "dbo.Dim_Employee",
+        "dbo.Dim_Product",
+        "dbo.Dim_Vendor"
+      ],
+      "statements": [
+        {
+          "type": "TRUNCATE",
+          "action": "skip",
+          "note": "Handled by dbt full-refresh"
+        },
+        {
+          "type": "INSERT",
+          "action": "migrate",
+          "note": "Core transformation logic \u2014 all non-identity columns populated"
+        }
+      ],
+      "logic_summary": "Full reload via TRUNCATE + INSERT. Joins requisition headers and lines from PTP_System, resolves surrogate keys against DW dimensions (date, employee x2, product, vendor) with ISNULL defaults. Derives status flags and approval duration from RequisitionStatus and date fields."
+    },
+    "warnings": []
   }
 }
