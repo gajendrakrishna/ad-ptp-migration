@@ -7,3 +7,37 @@ sources:
     description: dim_date from source system
   - name: dim_location
     description: dim_location from source system
+
+- name: purchasing
+  description: Purchasing transactional tables from PTP_System.Purchasing schema
+  tables:
+  - name: purchaseorders
+    description: Purchase order headers
+  - name: purchaseorderlines
+    description: Purchase order line items
+  - name: requisitions
+    description: Purchase requisition headers
+  - name: requisitionlines
+    description: Purchase requisition line items
+  - name: goodsreceipts
+    description: Goods receipt headers
+  - name: goodsreceiptlines
+    description: Goods receipt line items
+
+- name: master
+  description: Master data tables from PTP_System.Master schema
+  tables:
+  - name: vendors
+    description: Vendor master data
+  - name: items
+    description: Item/product master data
+  - name: employees
+    description: Employee master data
+
+- name: finance
+  description: Finance/AP tables — placeholder schema, verify against source system
+  tables:
+  - name: invoices
+    description: AP invoice headers
+  - name: invoicelines
+    description: AP invoice line items

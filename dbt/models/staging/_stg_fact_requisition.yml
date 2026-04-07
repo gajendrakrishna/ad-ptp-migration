@@ -1,0 +1,592 @@
+version: 2
+
+models:
+  - name: stg_fact_requisition
+    description: >
+      "Migrated from etl.usp_load_fact_requisition.
+      Target: dbo.fact_requisition."
+    columns:
+      - name: requisition_bk
+        description: "Business key — requisition number from source system"
+        data_tests:
+          - not_null
+
+      - name: requisitionline_bk
+        description: "Business key — requisition line ID from source system"
+        data_tests:
+          - not_null
+
+      - name: requisitiondate_sk
+        description: "Foreign key to dim_date for requisition date (0 if unmatched)"
+
+      - name: requiredbydate_sk
+        description: "Foreign key to dim_date for required-by date (0 if unmatched)"
+
+      - name: requestor_employee_sk
+        description: >
+          "Foreign key to dim_employee for the requestor
+          (-1 if unmatched)"
+        data_tests:
+          - relationships:
+              to: ref('stg_dim_employee')
+              field: employee_sk
+              where: "requestor_employee_sk != -1"
+
+      - name: approver_employee_sk
+        description: >
+          "Foreign key to dim_employee for the approver
+          (-1 if unmatched or unapproved)"
+        data_tests:
+          - relationships:
+              to: ref('stg_dim_employee')
+              field: employee_sk
+              where: "approver_employee_sk != -1"
+
+      - name: product_sk
+        description: "Foreign key to dim_product (-1 if unmatched)"
+        data_tests:
+          - relationships:
+              to: ref('stg_dim_product')
+              field: product_sk
+              where: "product_sk != -1"
+
+      - name: suggestedvendor_sk
+        description: "Foreign key to dim_vendor (-1 if unmatched)"
+        data_tests:
+          - relationships:
+              to: ref('stg_dim_vendor')
+              field: vendor_sk
+              where: "suggestedvendor_sk != -1"
+
+      - name: requisition_status
+        description: "Requisition status from source (Pending/Approved/Rejected/Converted)"
+        data_tests:
+          - not_null
+
+      - name: is_approved
+        description: "1 if status is Approved or Converted, else 0"
+
+      - name: is_rejected
+        description: "1 if status is Rejected, else 0"
+
+      - name: is_converted_to_po
+        description: "1 if status is Converted, else 0"
+
+      - name: quantity_requested
+        description: "Quantity of items requested on the line"
+
+      - name: estimated_unit_price
+        description: "Estimated unit price at time of requisition"
+
+      - name: estimated_line_total
+        description: "Computed: quantity * estimated_unit_price"
+
+      - name: approval_duration_days
+        description: >
+          "Days from requisition date to actioning date
+          (null for Pending status)"
+
+      - name: dw_load_datetime
+        description: "Batch load timestamp set by dbt at run time"
+        data_tests:
+          - not_null
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking"
+
+    unit_tests:
+      - name: test_happy_path_approved
+        model: stg_fact_requisition
+        given:
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionNumber: "TST-REQ-S1"
+                RequisitionID: 5012
+                RequestedByID: 20041
+                ApprovedByID: 20042
+                CostCenterID: 100
+                RequisitionDate: "2024-01-10"
+                RequiredByDate: "2024-02-01"
+                RequisitionStatus: "Approved"
+                RejectionReason: null
+                TotalAmount: 500.0
+                Notes: null
+                CreatedAt: "2024-01-10T00:00:00"
+                UpdatedAt: "2024-01-15T00:00:00"
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionID: 5012
+                RequisitionLineID: 4013
+                LineNumber: 1
+                ItemID: 13063
+                Quantity: 10.0
+                EstimatedUnitPrice: 45.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 20041
+                EmployeeCode: "TST-EMP-S1R"
+                FullName: "Alice Requester"
+                Email: "tst-emp-s1r@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+              - EmployeeID: 20042
+                EmployeeCode: "TST-EMP-S1A"
+                FullName: "Bob Approver"
+                Email: "tst-emp-s1a@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 13063
+                ItemCode: "TST-ITM-S1"
+                ItemName: "Widget A"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+
+          - input: source('master', 'vendors')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240110
+                FullDate: "2024-01-10"
+
+              - Date_SK: 20240201
+                FullDate: "2024-02-01"
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 125
+                Employee_BK: "TST-EMP-S1R"
+                IsCurrent: 1
+
+              - Employee_SK: 126
+                Employee_BK: "TST-EMP-S1A"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 93
+                Product_BK: "TST-ITM-S1"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+        expect:
+          rows:
+            - requisition_bk: "TST-REQ-S1"
+              requisitionline_bk: 4013
+              requisitiondate_sk: 20240110
+              requiredbydate_sk: 20240201
+              requestor_employee_sk: 125
+              approver_employee_sk: 126
+              product_sk: 93
+              suggestedvendor_sk: -1
+              requisition_status: "Approved"
+              is_approved: 1
+              is_rejected: 0
+              is_converted_to_po: 0
+              quantity_requested: 10.0
+              estimated_unit_price: 45.0
+              estimated_line_total: 450.00
+              approval_duration_days: 5
+
+      - name: test_status_pending
+        model: stg_fact_requisition
+        given:
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionNumber: "TST-REQ-S2"
+                RequisitionID: 5013
+                RequestedByID: 20043
+                ApprovedByID: null
+                CostCenterID: 100
+                RequisitionDate: "2024-01-20"
+                RequiredByDate: null
+                RequisitionStatus: "Pending"
+                RejectionReason: null
+                TotalAmount: 500.0
+                Notes: null
+                CreatedAt: "2024-01-20T00:00:00"
+                UpdatedAt: "2024-01-20T00:00:00"
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionID: 5013
+                RequisitionLineID: 4014
+                LineNumber: 1
+                ItemID: 13064
+                Quantity: 5.0
+                EstimatedUnitPrice: 20.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 20043
+                EmployeeCode: "TST-EMP-S2R"
+                FullName: "Carol Requester"
+                Email: "tst-emp-s2r@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 13064
+                ItemCode: "TST-ITM-S2"
+                ItemName: "Notebook"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+
+          - input: source('master', 'vendors')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240120
+                FullDate: "2024-01-20"
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 127
+                Employee_BK: "TST-EMP-S2R"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 94
+                Product_BK: "TST-ITM-S2"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+        expect:
+          rows:
+            - requisition_bk: "TST-REQ-S2"
+              requisitionline_bk: 4014
+              requisitiondate_sk: 20240120
+              requiredbydate_sk: 0
+              requestor_employee_sk: 127
+              approver_employee_sk: -1
+              product_sk: 94
+              suggestedvendor_sk: -1
+              requisition_status: "Pending"
+              is_approved: 0
+              is_rejected: 0
+              is_converted_to_po: 0
+              quantity_requested: 5.0
+              estimated_unit_price: 20.0
+              estimated_line_total: 100.00
+              approval_duration_days: null
+
+      - name: test_status_rejected
+        model: stg_fact_requisition
+        given:
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionNumber: "TST-REQ-S3"
+                RequisitionID: 5014
+                RequestedByID: 20044
+                ApprovedByID: null
+                CostCenterID: 100
+                RequisitionDate: "2024-02-01"
+                RequiredByDate: null
+                RequisitionStatus: "Rejected"
+                RejectionReason: null
+                TotalAmount: 500.0
+                Notes: null
+                CreatedAt: "2024-02-01T00:00:00"
+                UpdatedAt: "2024-02-05T00:00:00"
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionID: 5014
+                RequisitionLineID: 4015
+                LineNumber: 1
+                ItemID: 13065
+                Quantity: 3.0
+                EstimatedUnitPrice: 150.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 20044
+                EmployeeCode: "TST-EMP-S3R"
+                FullName: "Dave Requester"
+                Email: "tst-emp-s3r@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 13065
+                ItemCode: "TST-ITM-S3"
+                ItemName: "Office Chair"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+
+          - input: source('master', 'vendors')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240201
+                FullDate: "2024-02-01"
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 128
+                Employee_BK: "TST-EMP-S3R"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 95
+                Product_BK: "TST-ITM-S3"
+                IsCurrent: 1
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+        expect:
+          rows:
+            - requisition_bk: "TST-REQ-S3"
+              requisitionline_bk: 4015
+              requisitiondate_sk: 20240201
+              requiredbydate_sk: 0
+              requestor_employee_sk: 128
+              approver_employee_sk: -1
+              product_sk: 95
+              suggestedvendor_sk: -1
+              requisition_status: "Rejected"
+              is_approved: 0
+              is_rejected: 1
+              is_converted_to_po: 0
+              quantity_requested: 3.0
+              estimated_unit_price: 150.0
+              estimated_line_total: 450.00
+              approval_duration_days: 4
+
+      - name: test_gap_no_matching_dim_keys
+        model: stg_fact_requisition
+        given:
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionNumber: "TST-REQ-GAP1"
+                RequisitionID: 9001
+                RequestedByID: 99001
+                ApprovedByID: null
+                CostCenterID: 200
+                RequisitionDate: "2024-03-01"
+                RequiredByDate: "2024-03-15"
+                RequisitionStatus: "Pending"
+                RejectionReason: null
+                TotalAmount: 250.0
+                Notes: null
+                CreatedAt: "2024-03-01T00:00:00"
+                UpdatedAt: "2024-03-01T00:00:00"
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionID: 9001
+                RequisitionLineID: 9001
+                LineNumber: 1
+                ItemID: 99001
+                Quantity: 2.0
+                EstimatedUnitPrice: 125.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 99001
+                EmployeeCode: "UNKNOWN-EMP"
+                FullName: "Unknown Employee"
+                Email: "unknown@test.com"
+                Department: "Unknown"
+                JobTitle: "Unknown"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2024-01-01T00:00:00"
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 99001
+                ItemCode: "UNKNOWN-ITM"
+                ItemName: "Unknown Item"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Unknown"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2024-01-01T00:00:00"
+
+          - input: source('master', 'vendors')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows: []
+
+          - input: ref('stg_dim_employee')
+            rows: []
+
+          - input: ref('stg_dim_product')
+            rows: []
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+        expect:
+          rows:
+            - requisition_bk: "TST-REQ-GAP1"
+              requisitionline_bk: 9001
+              requisitiondate_sk: 0
+              requiredbydate_sk: 0
+              requestor_employee_sk: -1
+              approver_employee_sk: -1
+              product_sk: -1
+              suggestedvendor_sk: -1
+              requisition_status: "Pending"
+              is_approved: 0
+              is_rejected: 0
+              is_converted_to_po: 0
+              quantity_requested: 2.0
+              estimated_unit_price: 125.0
+              estimated_line_total: 250.00
+              approval_duration_days: null
+
+      - name: test_gap_converted_is_approved_flag
+        model: stg_fact_requisition
+        given:
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionNumber: "TST-REQ-GAP2"
+                RequisitionID: 9002
+                RequestedByID: 20041
+                ApprovedByID: 20042
+                CostCenterID: 100
+                RequisitionDate: "2024-04-01"
+                RequiredByDate: "2024-04-15"
+                RequisitionStatus: "Converted"
+                RejectionReason: null
+                TotalAmount: 1000.0
+                Notes: null
+                CreatedAt: "2024-04-01T00:00:00"
+                UpdatedAt: "2024-04-10T00:00:00"
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionID: 9002
+                RequisitionLineID: 9002
+                LineNumber: 1
+                ItemID: 13063
+                Quantity: 5.0
+                EstimatedUnitPrice: 200.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 20041
+                EmployeeCode: "TST-EMP-S1R"
+                FullName: "Alice Requester"
+                Email: "tst-emp-s1r@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+              - EmployeeID: 20042
+                EmployeeCode: "TST-EMP-S1A"
+                FullName: "Bob Approver"
+                Email: "tst-emp-s1a@test.com"
+                Department: "Operations"
+                JobTitle: "Analyst"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-01-01T00:00:00"
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 13063
+                ItemCode: "TST-ITM-S1"
+                ItemName: "Widget A"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+
+          - input: source('master', 'vendors')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows: []
+
+          - input: ref('stg_dim_employee')
+            rows: []
+
+          - input: ref('stg_dim_product')
+            rows: []
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+        expect:
+          rows:
+            - requisition_bk: "TST-REQ-GAP2"
+              requisitionline_bk: 9002
+              requisitiondate_sk: 0
+              requiredbydate_sk: 0
+              requestor_employee_sk: -1
+              approver_employee_sk: -1
+              product_sk: -1
+              suggestedvendor_sk: -1
+              requisition_status: "Converted"
+              is_approved: 1
+              is_rejected: 0
+              is_converted_to_po: 1
+              quantity_requested: 5.0
+              estimated_unit_price: 200.0
+              estimated_line_total: 1000.00
+              approval_duration_days: 9

@@ -1,0 +1,949 @@
+version: 2
+
+models:
+  - name: stg_fact_purchaseorder
+    description: >
+      Migrated from etl.usp_load_fact_po.
+      Target: dbo.fact_purchaseorder.
+      Purchase order fact table at the grain of one row per PO line.
+      Joins source PO and PO line data with conformed dimensions
+      (Vendor, Product, Employee x2 roles, Date x2 roles) and resolves
+      optional upstream requisition line data for negotiation KPIs.
+    columns:
+      - name: po_bk
+        description: "Business key: purchase order number from source system."
+        data_tests:
+          - not_null
+
+      - name: po_line_number
+        description: "Line number within the purchase order."
+        data_tests:
+          - not_null
+
+      - name: requisition_bk
+        description: >
+          Business key: requisition number from source system.
+          Nullable when the PO was raised without a preceding requisition.
+
+      - name: podate_sk
+        description: >
+          Surrogate key to dbo.Dim_Date for the PO date.
+          Defaults to 0 when no matching date dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('dbo', 'dim_date')
+              field: Date_SK
+
+      - name: expecteddelivery_sk
+        description: >
+          Surrogate key to dbo.Dim_Date for the expected delivery date.
+          Defaults to 0 when no matching date dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('dbo', 'dim_date')
+              field: Date_SK
+
+      - name: vendor_sk
+        description: >
+          Surrogate key to dbo.Dim_Vendor for the supplying vendor.
+          Defaults to -1 when no current SCD2 dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_vendor')
+              field: Vendor_SK
+
+      - name: product_sk
+        description: >
+          Surrogate key to dbo.Dim_Product for the ordered item.
+          Defaults to -1 when no current SCD2 dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_product')
+              field: Product_SK
+
+      - name: buyer_employee_sk
+        description: >
+          Surrogate key to dbo.Dim_Employee for the buyer (role-playing).
+          Defaults to -1 when no current SCD2 dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_employee')
+              field: Employee_SK
+
+      - name: approver_employee_sk
+        description: >
+          Surrogate key to dbo.Dim_Employee for the approver (role-playing).
+          Defaults to -1 when no current SCD2 dimension row is found.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_employee')
+              field: Employee_SK
+
+      - name: po_status
+        description: "Status of the purchase order (e.g. Open, Closed, Invoiced)."
+        data_tests:
+          - not_null
+
+      - name: quantity_ordered
+        description: "Quantity of the item ordered on this PO line."
+        data_tests:
+          - not_null
+
+      - name: agreed_unit_price
+        description: "Negotiated unit price agreed with the vendor for this line."
+        data_tests:
+          - not_null
+
+      - name: po_line_total
+        description: "Total value of this PO line: quantity_ordered * agreed_unit_price."
+        data_tests:
+          - not_null
+
+      - name: estimated_unit_price
+        description: >
+          Estimated unit price from the upstream requisition line.
+          Nullable when no requisition line exists for this PO line.
+
+      - name: price_savings_vs_estimate
+        description: >
+          Savings achieved vs the budget estimate:
+          (estimated_unit_price - agreed_unit_price) * quantity_ordered.
+          Positive = savings. Nullable when estimated_unit_price is null.
+
+      - name: approval_duration_days
+        description: >
+          Number of calendar days from the requisition date to the PO date.
+          Nullable when no upstream requisition is linked to this PO.
+
+      - name: dw_load_datetime
+        description: "Timestamp when this row was loaded by dbt."
+        data_tests:
+          - not_null
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage and auditability."
+        data_tests:
+          - not_null
+
+    unit_tests:
+      - name: test_happy_path_full_requisition
+        model: stg_fact_purchaseorder
+        given:
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - PONumber: TST-PO-S1
+                RequisitionID: 7
+                VendorID: 10053
+                OrderedByID: 10029
+                ApprovedByID: 10030
+                CostCenterID: 100
+                PODate: '2024-01-15'
+                ExpectedDelivery: '2024-02-15'
+                POStatus: Open
+                PaymentTerms: NET30
+                ShippingAddress: null
+                TotalAmount: 500.0
+                Notes: null
+                CreatedAt: '2024-01-10T00:00:00'
+                UpdatedAt: '2024-01-10T00:00:00'
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - POID: 8031
+                LineNumber: 1
+                RequisitionLineID: 9
+                ItemID: 3053
+                Quantity: 10.0
+                AgreedUnitPrice: 50.0
+                QuantityReceived: 0.0
+                QuantityInvoiced: 0.0
+                LineStatus: Open
+                Notes: null
+
+          - input: source('master', 'vendors')
+            rows:
+              - VendorID: 10053
+                VendorCode: TST-VND-S1
+                VendorName: Acme Corp
+                ContactName: null
+                Email: null
+                Phone: null
+                Address: null
+                City: null
+                Country: United States
+                TaxID: null
+                PaymentTerms: NET30
+                VendorStatus: Active
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 3053
+                ItemCode: TST-ITM-S1
+                ItemName: Widget A
+                Description: null
+                UnitOfMeasure: EA
+                ItemCategory: Hardware
+                AccountingType: Direct
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 10029
+                EmployeeCode: TST-EMP-S1B
+                FullName: Bob Buyer
+                Email: tst-emp-s1b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: '2022-01-01T00:00:00'
+              - EmployeeID: 10030
+                EmployeeCode: TST-EMP-S1A
+                FullName: Anna Approver
+                Email: tst-emp-s1a@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: '2022-01-01T00:00:00'
+
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionID: 7
+                RequisitionNumber: TST-REQ-S1
+                RequestedByID: 10029
+                ApprovedByID: null
+                CostCenterID: 100
+                RequisitionDate: '2024-01-10'
+                RequiredByDate: null
+                RequisitionStatus: Approved
+                RejectionReason: null
+                TotalAmount: 450.0
+                Notes: null
+                CreatedAt: '2024-01-10T00:00:00'
+                UpdatedAt: '2024-01-10T00:00:00'
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionLineID: 9
+                RequisitionID: 7
+                LineNumber: 1
+                ItemID: 3053
+                Quantity: 10.0
+                EstimatedUnitPrice: 45.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240115
+                FullDate: '2024-01-15'
+                DayName: Monday
+                DayOfWeek: 2
+                DayOfMonth: 15
+                DayOfYear: 15
+                WeekOfYear: 3
+                MonthNumber: 1
+                MonthName: January
+                MonthShort: Jan
+                CalendarQuarter: 1
+                CalendarQuarterName: Q1
+                CalendarYear: 2024
+                CalendarYearMonth: 202401
+                FiscalYear: 2024
+                FiscalQuarter: 1
+                FiscalMonth: 1
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+              - Date_SK: 20240215
+                FullDate: '2024-02-15'
+                DayName: Monday
+                DayOfWeek: 5
+                DayOfMonth: 15
+                DayOfYear: 46
+                WeekOfYear: 7
+                MonthNumber: 2
+                MonthName: February
+                MonthShort: Feb
+                CalendarQuarter: 1
+                CalendarQuarterName: Q1
+                CalendarYear: 2024
+                CalendarYearMonth: 202402
+                FiscalYear: 2024
+                FiscalQuarter: 1
+                FiscalMonth: 2
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+
+          - input: ref('stg_dim_vendor')
+            rows:
+              - Vendor_SK: 1
+                Vendor_BK: TST-VND-S1
+                VendorName: Acme Corp
+                ContactName: ''
+                City: ''
+                Country: United States
+                TaxID: ''
+                PaymentTerms: NET30
+                VendorStatus: Active
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                DW_UpdateDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 1
+                Product_BK: TST-ITM-S1
+                ProductName: Widget A
+                Description: ''
+                UnitOfMeasure: EA
+                Category: Hardware
+                AccountingType: Direct
+                GLAccount: '50000'
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 1
+                Employee_BK: TST-EMP-S1B
+                FullName: Bob Buyer
+                Email: tst-emp-s1b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                IsActive: 1
+                EffectiveStart: '2022-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+              - Employee_SK: 2
+                Employee_BK: TST-EMP-S1A
+                FullName: Anna Approver
+                Email: tst-emp-s1a@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                IsActive: 1
+                EffectiveStart: '2022-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+        expect:
+          rows:
+            - po_bk: TST-PO-S1
+              po_line_number: 1
+              requisition_bk: TST-REQ-S1
+              podate_sk: 20240115
+              expecteddelivery_sk: 20240215
+              vendor_sk: 1
+              product_sk: 1
+              buyer_employee_sk: 1
+              approver_employee_sk: 2
+              po_status: Open
+              quantity_ordered: 10.0
+              agreed_unit_price: 50.0
+              po_line_total: 500.00
+              estimated_unit_price: 45.0
+              price_savings_vs_estimate: -50.00
+              approval_duration_days: 5
+
+      - name: test_no_requisition
+        model: stg_fact_purchaseorder
+        given:
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - PONumber: TST-PO-S2
+                RequisitionID: null
+                VendorID: 10054
+                OrderedByID: 10031
+                ApprovedByID: null
+                CostCenterID: 100
+                PODate: '2024-02-01'
+                ExpectedDelivery: '2024-03-01'
+                POStatus: Open
+                PaymentTerms: NET30
+                ShippingAddress: null
+                TotalAmount: 500.0
+                Notes: null
+                CreatedAt: '2024-01-10T00:00:00'
+                UpdatedAt: '2024-01-10T00:00:00'
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - POID: 8032
+                LineNumber: 1
+                RequisitionLineID: null
+                ItemID: 3054
+                Quantity: 5.0
+                AgreedUnitPrice: 100.0
+                QuantityReceived: 0.0
+                QuantityInvoiced: 0.0
+                LineStatus: Open
+                Notes: null
+
+          - input: source('master', 'vendors')
+            rows:
+              - VendorID: 10054
+                VendorCode: TST-VND-S2
+                VendorName: Beta Supplies
+                ContactName: null
+                Email: null
+                Phone: null
+                Address: null
+                City: null
+                Country: United States
+                TaxID: null
+                PaymentTerms: NET30
+                VendorStatus: Active
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 3054
+                ItemCode: TST-ITM-S2
+                ItemName: Cable Bundle
+                Description: null
+                UnitOfMeasure: EA
+                ItemCategory: Hardware
+                AccountingType: Direct
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 10031
+                EmployeeCode: TST-EMP-S2B
+                FullName: Carol Buyer
+                Email: tst-emp-s2b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: '2022-01-01T00:00:00'
+
+          - input: source('purchasing', 'requisitions')
+            rows: []
+
+          - input: source('purchasing', 'requisitionlines')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240201
+                FullDate: '2024-02-01'
+                DayName: Thursday
+                DayOfWeek: 5
+                DayOfMonth: 1
+                DayOfYear: 32
+                WeekOfYear: 5
+                MonthNumber: 2
+                MonthName: February
+                MonthShort: Feb
+                CalendarQuarter: 1
+                CalendarQuarterName: Q1
+                CalendarYear: 2024
+                CalendarYearMonth: 202402
+                FiscalYear: 2024
+                FiscalQuarter: 1
+                FiscalMonth: 2
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+              - Date_SK: 20240301
+                FullDate: '2024-03-01'
+                DayName: Friday
+                DayOfWeek: 6
+                DayOfMonth: 1
+                DayOfYear: 61
+                WeekOfYear: 9
+                MonthNumber: 3
+                MonthName: March
+                MonthShort: Mar
+                CalendarQuarter: 1
+                CalendarQuarterName: Q1
+                CalendarYear: 2024
+                CalendarYearMonth: 202403
+                FiscalYear: 2024
+                FiscalQuarter: 1
+                FiscalMonth: 3
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+
+          - input: ref('stg_dim_vendor')
+            rows:
+              - Vendor_SK: 2
+                Vendor_BK: TST-VND-S2
+                VendorName: Beta Supplies
+                ContactName: ''
+                City: ''
+                Country: United States
+                TaxID: ''
+                PaymentTerms: NET30
+                VendorStatus: Active
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                DW_UpdateDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 2
+                Product_BK: TST-ITM-S2
+                ProductName: Cable Bundle
+                Description: ''
+                UnitOfMeasure: EA
+                Category: Hardware
+                AccountingType: Direct
+                GLAccount: '50000'
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 3
+                Employee_BK: TST-EMP-S2B
+                FullName: Carol Buyer
+                Email: tst-emp-s2b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                IsActive: 1
+                EffectiveStart: '2022-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+        expect:
+          rows:
+            - po_bk: TST-PO-S2
+              po_line_number: 1
+              requisition_bk: null
+              podate_sk: 20240201
+              expecteddelivery_sk: 20240301
+              vendor_sk: 2
+              product_sk: 2
+              buyer_employee_sk: 3
+              approver_employee_sk: -1
+              po_status: Open
+              quantity_ordered: 5.0
+              agreed_unit_price: 100.0
+              po_line_total: 500.00
+              estimated_unit_price: null
+              price_savings_vs_estimate: null
+              approval_duration_days: null
+
+      - name: test_gap_vendor_not_in_dim
+        model: stg_fact_purchaseorder
+        given:
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - PONumber: TST-PO-G1
+                RequisitionID: null
+                VendorID: 99999
+                OrderedByID: 10031
+                ApprovedByID: null
+                CostCenterID: 100
+                PODate: '2024-03-01'
+                ExpectedDelivery: '2024-04-01'
+                POStatus: Open
+                PaymentTerms: NET30
+                ShippingAddress: null
+                TotalAmount: 200.0
+                Notes: null
+                CreatedAt: '2024-02-01T00:00:00'
+                UpdatedAt: '2024-02-01T00:00:00'
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - POID: 9001
+                LineNumber: 1
+                RequisitionLineID: null
+                ItemID: 3054
+                Quantity: 2.0
+                AgreedUnitPrice: 100.0
+                QuantityReceived: 0.0
+                QuantityInvoiced: 0.0
+                LineStatus: Open
+                Notes: null
+
+          - input: source('master', 'vendors')
+            rows:
+              - VendorID: 99999
+                VendorCode: TST-VND-UNKNOWN
+                VendorName: Unknown Vendor
+                ContactName: null
+                Email: null
+                Phone: null
+                Address: null
+                City: null
+                Country: null
+                TaxID: null
+                PaymentTerms: NET30
+                VendorStatus: Active
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 3054
+                ItemCode: TST-ITM-S2
+                ItemName: Cable Bundle
+                Description: null
+                UnitOfMeasure: EA
+                ItemCategory: Hardware
+                AccountingType: Direct
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 10031
+                EmployeeCode: TST-EMP-S2B
+                FullName: Carol Buyer
+                Email: tst-emp-s2b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: '2022-01-01T00:00:00'
+
+          - input: source('purchasing', 'requisitions')
+            rows: []
+
+          - input: source('purchasing', 'requisitionlines')
+            rows: []
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240301
+                FullDate: '2024-03-01'
+                DayName: Friday
+                DayOfWeek: 6
+                DayOfMonth: 1
+                DayOfYear: 61
+                WeekOfYear: 9
+                MonthNumber: 3
+                MonthName: March
+                MonthShort: Mar
+                CalendarQuarter: 1
+                CalendarQuarterName: Q1
+                CalendarYear: 2024
+                CalendarYearMonth: 202403
+                FiscalYear: 2024
+                FiscalQuarter: 1
+                FiscalMonth: 3
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+              - Date_SK: 20240401
+                FullDate: '2024-04-01'
+                DayName: Monday
+                DayOfWeek: 2
+                DayOfMonth: 1
+                DayOfYear: 92
+                WeekOfYear: 14
+                MonthNumber: 4
+                MonthName: April
+                MonthShort: Apr
+                CalendarQuarter: 2
+                CalendarQuarterName: Q2
+                CalendarYear: 2024
+                CalendarYearMonth: 202404
+                FiscalYear: 2024
+                FiscalQuarter: 2
+                FiscalMonth: 4
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+
+          - input: ref('stg_dim_vendor')
+            rows: []
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 2
+                Product_BK: TST-ITM-S2
+                ProductName: Cable Bundle
+                Description: ''
+                UnitOfMeasure: EA
+                Category: Hardware
+                AccountingType: Direct
+                GLAccount: '50000'
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 3
+                Employee_BK: TST-EMP-S2B
+                FullName: Carol Buyer
+                Email: tst-emp-s2b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                IsActive: 1
+                EffectiveStart: '2022-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+        expect:
+          rows:
+            - po_bk: TST-PO-G1
+              po_line_number: 1
+              requisition_bk: null
+              podate_sk: 20240301
+              expecteddelivery_sk: 20240401
+              vendor_sk: -1
+              product_sk: 2
+              buyer_employee_sk: 3
+              approver_employee_sk: -1
+              po_status: Open
+              quantity_ordered: 2.0
+              agreed_unit_price: 100.0
+              po_line_total: 200.00
+              estimated_unit_price: null
+              price_savings_vs_estimate: null
+              approval_duration_days: null
+
+      - name: test_gap_estimated_price_lower_than_agreed
+        model: stg_fact_purchaseorder
+        given:
+          - input: source('purchasing', 'purchaseorders')
+            rows:
+              - PONumber: TST-PO-G2
+                RequisitionID: 20
+                VendorID: 10053
+                OrderedByID: 10029
+                ApprovedByID: null
+                CostCenterID: 100
+                PODate: '2024-04-10'
+                ExpectedDelivery: '2024-05-10'
+                POStatus: Open
+                PaymentTerms: NET30
+                ShippingAddress: null
+                TotalAmount: 200.0
+                Notes: null
+                CreatedAt: '2024-04-01T00:00:00'
+                UpdatedAt: '2024-04-01T00:00:00'
+
+          - input: source('purchasing', 'purchaseorderlines')
+            rows:
+              - POID: 9002
+                LineNumber: 1
+                RequisitionLineID: 25
+                ItemID: 3053
+                Quantity: 4.0
+                AgreedUnitPrice: 60.0
+                QuantityReceived: 0.0
+                QuantityInvoiced: 0.0
+                LineStatus: Open
+                Notes: null
+
+          - input: source('master', 'vendors')
+            rows:
+              - VendorID: 10053
+                VendorCode: TST-VND-S1
+                VendorName: Acme Corp
+                ContactName: null
+                Email: null
+                Phone: null
+                Address: null
+                City: null
+                Country: United States
+                TaxID: null
+                PaymentTerms: NET30
+                VendorStatus: Active
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'items')
+            rows:
+              - ItemID: 3053
+                ItemCode: TST-ITM-S1
+                ItemName: Widget A
+                Description: null
+                UnitOfMeasure: EA
+                ItemCategory: Hardware
+                AccountingType: Direct
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: '2023-01-01T00:00:00'
+
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeID: 10029
+                EmployeeCode: TST-EMP-S1B
+                FullName: Bob Buyer
+                Email: tst-emp-s1b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: '2022-01-01T00:00:00'
+
+          - input: source('purchasing', 'requisitions')
+            rows:
+              - RequisitionID: 20
+                RequisitionNumber: TST-REQ-G2
+                RequestedByID: 10029
+                ApprovedByID: null
+                CostCenterID: 100
+                RequisitionDate: '2024-04-05'
+                RequiredByDate: null
+                RequisitionStatus: Approved
+                RejectionReason: null
+                TotalAmount: 200.0
+                Notes: null
+                CreatedAt: '2024-04-05T00:00:00'
+                UpdatedAt: '2024-04-05T00:00:00'
+
+          - input: source('purchasing', 'requisitionlines')
+            rows:
+              - RequisitionLineID: 25
+                RequisitionID: 20
+                LineNumber: 1
+                ItemID: 3053
+                Quantity: 4.0
+                EstimatedUnitPrice: 55.0
+                SuggestedVendorID: null
+                Notes: null
+
+          - input: source('dbo', 'dim_date')
+            rows:
+              - Date_SK: 20240410
+                FullDate: '2024-04-10'
+                DayName: Wednesday
+                DayOfWeek: 4
+                DayOfMonth: 10
+                DayOfYear: 101
+                WeekOfYear: 15
+                MonthNumber: 4
+                MonthName: April
+                MonthShort: Apr
+                CalendarQuarter: 2
+                CalendarQuarterName: Q2
+                CalendarYear: 2024
+                CalendarYearMonth: 202404
+                FiscalYear: 2024
+                FiscalQuarter: 2
+                FiscalMonth: 4
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+              - Date_SK: 20240510
+                FullDate: '2024-05-10'
+                DayName: Friday
+                DayOfWeek: 6
+                DayOfMonth: 10
+                DayOfYear: 131
+                WeekOfYear: 19
+                MonthNumber: 5
+                MonthName: May
+                MonthShort: May
+                CalendarQuarter: 2
+                CalendarQuarterName: Q2
+                CalendarYear: 2024
+                CalendarYearMonth: 202405
+                FiscalYear: 2024
+                FiscalQuarter: 2
+                FiscalMonth: 5
+                IsWeekend: 0
+                IsHoliday: 0
+                HolidayName: null
+
+          - input: ref('stg_dim_vendor')
+            rows:
+              - Vendor_SK: 1
+                Vendor_BK: TST-VND-S1
+                VendorName: Acme Corp
+                ContactName: ''
+                City: ''
+                Country: United States
+                TaxID: ''
+                PaymentTerms: NET30
+                VendorStatus: Active
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                DW_UpdateDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_product')
+            rows:
+              - Product_SK: 1
+                Product_BK: TST-ITM-S1
+                ProductName: Widget A
+                Description: ''
+                UnitOfMeasure: EA
+                Category: Hardware
+                AccountingType: Direct
+                GLAccount: '50000'
+                EffectiveStart: '2023-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+          - input: ref('stg_dim_employee')
+            rows:
+              - Employee_SK: 1
+                Employee_BK: TST-EMP-S1B
+                FullName: Bob Buyer
+                Email: tst-emp-s1b@test.com
+                Department: Procurement
+                JobTitle: Buyer
+                IsActive: 1
+                EffectiveStart: '2022-01-01'
+                EffectiveEnd: '9999-12-31'
+                IsCurrent: 1
+                DW_InsertDate: '2024-01-01T00:00:00'
+                SourceRowHash: null
+
+        expect:
+          rows:
+            - po_bk: TST-PO-G2
+              po_line_number: 1
+              requisition_bk: TST-REQ-G2
+              podate_sk: 20240410
+              expecteddelivery_sk: 20240510
+              vendor_sk: 1
+              product_sk: 1
+              buyer_employee_sk: 1
+              approver_employee_sk: -1
+              po_status: Open
+              quantity_ordered: 4.0
+              agreed_unit_price: 60.0
+              po_line_total: 240.00
+              estimated_unit_price: 55.0
+              price_savings_vs_estimate: -20.00
+              approval_duration_days: 5

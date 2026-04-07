@@ -1,0 +1,256 @@
+version: 2
+
+models:
+  - name: stg_dim_product
+    description: >
+      Migrated from etl.usp_load_dim_product.
+      Target: dbo.dim_product. Ephemeral staging model that selects
+      net-new product rows from PTP_System.Master.Items not already
+      present as current records in dbo.dim_product.
+    columns:
+      - name: product_bk
+        description: "Business key for the product (source: ItemCode)."
+        data_tests:
+          - not_null
+
+      - name: productname
+        description: "Product display name (source: ItemName)."
+
+      - name: description
+        description: "Product description; empty string when source is null."
+
+      - name: unitofmeasure
+        description: "Unit of measure for the product."
+
+      - name: category
+        description: "Product category (source: ItemCategory)."
+
+      - name: accountingtype
+        description: "Accounting classification type."
+
+      - name: glaccount
+        description: >
+          General ledger account code; defaults to '00000' when
+          source GLAccount is null.
+
+      - name: effectivestart
+        description: "SCD2 effective start date (today's date at load time)."
+
+      - name: effectiveend
+        description: "SCD2 effective end date; '9999-12-31' for current rows."
+
+      - name: iscurrent
+        description: "Boolean flag; true for current active SCD2 version."
+
+      - name: dw_insertdate
+        description: "Warehouse insert timestamp in UTC."
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking."
+
+      - name: _loaded_at
+        description: "Timestamp when the row was loaded by dbt."
+
+    unit_tests:
+      - name: test_insert_net_new_product
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "TST-ITM-S1"
+                ItemName: "Widget Alpha"
+                Description: "Standard widget"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: "50001"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows: []
+        expect:
+          rows:
+            - product_bk: "TST-ITM-S1"
+              productname: "Widget Alpha"
+              description: "Standard widget"
+              unitofmeasure: "EA"
+              category: "Hardware"
+              accountingtype: "Direct"
+              glaccount: "50001"
+              effectiveend: "9999-12-31"
+              iscurrent: true
+
+      - name: test_insert_null_description
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "TST-ITM-S2"
+                ItemName: "Widget Beta"
+                Description: null
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: "50002"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows: []
+        expect:
+          rows:
+            - product_bk: "TST-ITM-S2"
+              productname: "Widget Beta"
+              description: ""
+              unitofmeasure: "EA"
+              category: "Hardware"
+              accountingtype: "Direct"
+              glaccount: "50002"
+              effectiveend: "9999-12-31"
+              iscurrent: true
+
+      - name: test_insert_null_glaccount
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "TST-ITM-S3"
+                ItemName: "Widget Gamma"
+                Description: "Gamma widget"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows: []
+        expect:
+          rows:
+            - product_bk: "TST-ITM-S3"
+              productname: "Widget Gamma"
+              description: "Gamma widget"
+              unitofmeasure: "EA"
+              category: "Hardware"
+              accountingtype: "Direct"
+              glaccount: "00000"
+              effectiveend: "9999-12-31"
+              iscurrent: true
+
+      - name: test_no_insert_current_row_exists
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "TST-ITM-S4"
+                ItemName: "Widget Delta"
+                Description: "Delta widget"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: "50004"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows:
+              - product_bk: "TST-ITM-S4"
+                iscurrent: 1
+        expect:
+          rows: []
+
+      - name: test_phase1_no_active_row_inserts_new
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "TST-ITM-S5"
+                ItemName: "Widget Epsilon"
+                Description: "Epsilon widget"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Direct"
+                GLAccount: "50005"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows:
+              - product_bk: "TST-ITM-S5"
+                iscurrent: 0
+        expect:
+          rows:
+            - product_bk: "TST-ITM-S5"
+              productname: "Widget Epsilon"
+              description: "Epsilon widget"
+              unitofmeasure: "EA"
+              category: "Hardware"
+              accountingtype: "Direct"
+              glaccount: "50005"
+              effectiveend: "9999-12-31"
+              iscurrent: true
+
+      - name: test_empty_source
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows: []
+          - input: ref('stg_dim_product')
+            rows: []
+        expect:
+          rows: []
+
+      - name: test_gap_multiple_items_some_current
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "ITM-A"
+                ItemName: "Item A"
+                Description: "A"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Hardware"
+                AccountingType: "Asset"
+                GLAccount: "18100"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+              - ItemCode: "ITM-B"
+                ItemName: "Item B"
+                Description: "B"
+                UnitOfMeasure: "EA"
+                ItemCategory: "Office"
+                AccountingType: "Expense"
+                GLAccount: "62100"
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows:
+              - product_bk: "ITM-A"
+                iscurrent: 1
+        expect:
+          rows:
+            - product_bk: "ITM-B"
+              productname: "Item B"
+              description: "B"
+              glaccount: "62100"
+              iscurrent: true
+
+      - name: test_gap_null_description_and_null_glaccount_combined
+        model: stg_dim_product
+        given:
+          - input: source('master', 'items')
+            rows:
+              - ItemCode: "ITM-COMBO"
+                ItemName: "Combo Null Item"
+                Description: null
+                UnitOfMeasure: "BOX"
+                ItemCategory: "Supplies"
+                AccountingType: "Expense"
+                GLAccount: null
+                IsActive: 1
+                CreatedAt: "2023-01-01T00:00:00"
+          - input: ref('stg_dim_product')
+            rows: []
+        expect:
+          rows:
+            - product_bk: "ITM-COMBO"
+              description: ""
+              glaccount: "00000"
+              iscurrent: true
