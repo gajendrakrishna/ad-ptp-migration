@@ -1,0 +1,1004 @@
+version: 2
+
+models:
+  - name: stg_dim_vendor
+    description: >
+      Migrated from etl.usp_load_dim_vendor. Target: dbo.dim_vendor.
+      Implements SCD Type 2 via union of expired rows and
+      net-new/re-versioned rows from PTP_System.Master.Vendors.
+
+    columns:
+      - name: vendor_sk
+        description: "Surrogate key — identity assigned by source system."
+        data_tests:
+          - not_null:
+              where: "is_current = 1"
+
+      - name: vendor_bk
+        description: "Business natural key (VendorCode from source)."
+        data_tests:
+          - not_null
+
+      - name: vendor_name
+        description: "Vendor display name."
+
+      - name: contact_name
+        description: "Primary contact person name."
+        meta:
+          contains_pii: true
+          pii_action: mask
+
+      - name: city
+        description: "City where the vendor is located."
+
+      - name: country
+        description: "Country where the vendor is located."
+
+      - name: tax_id
+        description: "Tax identifier for the vendor."
+        meta:
+          contains_pii: true
+          pii_action: mask
+
+      - name: payment_terms
+        description: "Agreed payment terms (e.g. NET30, NET45)."
+
+      - name: vendor_status
+        description: "Operational status of the vendor."
+
+      - name: effective_start
+        description: "Date from which this version of the row is current."
+
+      - name: effective_end
+        description: >
+          Date until which this version of the row is current.
+          9999-12-31 indicates the active/current version.
+
+      - name: is_current
+        description: "Flag indicating the active SCD2 version (1=current)."
+
+      - name: dw_insert_date
+        description: "UTC timestamp when the row was first inserted."
+
+      - name: dw_update_date
+        description: "UTC timestamp when the row was last updated."
+
+      - name: source_row_hash
+        description: >
+          SHA2-256 hash of tracked attributes used for change detection.
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking."
+
+      - name: _loaded_at
+        description: "Timestamp when the row was loaded by dbt."
+
+    unit_tests:
+      - name: test_scd2_no_expire_when_dw_hash_is_null
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV001",
+                  VendorName: "Hash Null Vendor",
+                  ContactName: "Jane Smith",
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: "Denver",
+                  Country: "USA",
+                  TaxID: "12-0000001",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  CreatedAt: "2024-01-15",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {
+                  Vendor_BK: "TSTV001",
+                  VendorName: "Hash Null Vendor",
+                  ContactName: "Jane Smith",
+                  City: "Denver",
+                  Country: "USA",
+                  TaxID: "12-0000001",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  EffectiveStart: "2024-01-15",
+                  EffectiveEnd: "9999-12-31",
+                  IsCurrent: 1,
+                  DW_InsertDate: "2024-01-15T00:00:00",
+                  DW_UpdateDate: "2024-01-15T00:00:00",
+                  SourceRowHash: null,
+                }
+        expect:
+          rows:
+            - {
+                Vendor_SK: 50,
+                Vendor_BK: "TSTV001",
+                VendorName: "Hash Null Vendor",
+                ContactName: "Jane Smith",
+                City: "Denver",
+                Country: "USA",
+                TaxID: "12-0000001",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2024-01-15",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2024-01-15 00:00:00",
+                DW_UpdateDate: "2024-01-15 00:00:00",
+                SourceRowHash: null,
+              }
+            - {
+                Vendor_SK: 51,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 52,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 53,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 54,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+
+      - name: test_scd2_no_expire_when_vendor_not_in_dw
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV002",
+                  VendorName: "Brand New Vendor",
+                  ContactName: "Bob Jones",
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: "Phoenix",
+                  Country: "USA",
+                  TaxID: "12-0000002",
+                  PaymentTerms: "NET45",
+                  VendorStatus: "Active",
+                  CreatedAt: "2024-02-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+        expect:
+          rows:
+            - {
+                Vendor_SK: 55,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 56,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 57,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 58,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+            - {
+                Vendor_SK: 59,
+                Vendor_BK: "TSTV002",
+                VendorName: "Brand New Vendor",
+                ContactName: "Bob Jones",
+                City: "Phoenix",
+                Country: "USA",
+                TaxID: "12-0000002",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "aa79a5af102e3308a4f2744701a4a0cb2b184f1cd8029ed91802662e48cd5a20",
+              }
+
+      - name: test_scd2_insert_new_vendor_no_prior_dw_row
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV003",
+                  VendorName: "Net New Vendor Corp",
+                  ContactName: "Alice Brown",
+                  Email: "alice@netnew.com",
+                  Phone: "555-0300",
+                  Address: "789 Elm St",
+                  City: "Seattle",
+                  Country: "USA",
+                  TaxID: "55-1234567",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  CreatedAt: "2025-01-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+        expect:
+          rows:
+            - {
+                Vendor_SK: 60,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 61,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 62,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 63,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+            - {
+                Vendor_SK: 64,
+                Vendor_BK: "TSTV003",
+                VendorName: "Net New Vendor Corp",
+                ContactName: "Alice Brown",
+                City: "Seattle",
+                Country: "USA",
+                TaxID: "55-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "3b2400cc953787bf1e9b35cda0d85f35511f9d43d71f9ba25f5fa1fb30d8eb84",
+              }
+
+      - name: test_scd2_insert_new_vendor_null_optional_fields
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV004",
+                  VendorName: "Minimal Info Vendor",
+                  ContactName: null,
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: null,
+                  Country: "Canada",
+                  TaxID: null,
+                  PaymentTerms: "NET60",
+                  VendorStatus: "Active",
+                  CreatedAt: "2024-03-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+        expect:
+          rows:
+            - {
+                Vendor_SK: 65,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 66,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 67,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 68,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+            - {
+                Vendor_SK: 69,
+                Vendor_BK: "TSTV004",
+                VendorName: "Minimal Info Vendor",
+                ContactName: "Unknown",
+                City: "Unknown",
+                Country: "Canada",
+                TaxID: "Unknown",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "a7efd175a743a695bdc94808cd81cc252f0c15a6dbeb666628f2ca7cf4f66ad7",
+              }
+
+      - name: test_scd2_insert_replacement_row_after_expiry
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV006",
+                  VendorName: "Evolving Vendor LLC",
+                  ContactName: "Carol White",
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: "Chicago",
+                  Country: "USA",
+                  TaxID: "77-9999006",
+                  PaymentTerms: "NET45",
+                  VendorStatus: "Active",
+                  CreatedAt: "2024-01-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {
+                  Vendor_BK: "TSTV006",
+                  VendorName: "Evolving Vendor LLC",
+                  ContactName: "Carol White",
+                  City: "Boston",
+                  Country: "USA",
+                  TaxID: "77-9999006",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  EffectiveStart: "2024-01-01",
+                  EffectiveEnd: "2025-03-14",
+                  IsCurrent: 0,
+                  DW_InsertDate: "2024-01-01T00:00:00",
+                  DW_UpdateDate: "2025-03-15T00:00:00",
+                  SourceRowHash: null,
+                }
+        expect:
+          rows:
+            - {
+                Vendor_SK: 70,
+                Vendor_BK: "TSTV006",
+                VendorName: "Evolving Vendor LLC",
+                ContactName: "Carol White",
+                City: "Boston",
+                Country: "USA",
+                TaxID: "77-9999006",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2024-01-01",
+                EffectiveEnd: "2025-03-14",
+                IsCurrent: false,
+                DW_InsertDate: "2024-01-01 00:00:00",
+                DW_UpdateDate: "2025-03-15 00:00:00",
+                SourceRowHash: null,
+              }
+            - {
+                Vendor_SK: 71,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 72,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 73,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 74,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+            - {
+                Vendor_SK: 75,
+                Vendor_BK: "TSTV006",
+                VendorName: "Evolving Vendor LLC",
+                ContactName: "Carol White",
+                City: "Chicago",
+                Country: "USA",
+                TaxID: "77-9999006",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "48ecba8f723c69c200b70838625ff9c99a145cb0cfb24a04e66c7cc71313b22f",
+              }
+
+      - name: test_scd2_no_insert_when_current_row_exists
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "TSTV007",
+                  VendorName: "Stable Vendor Inc",
+                  ContactName: "Frank Miles",
+                  Email: "frank@stable.com",
+                  Phone: "555-0700",
+                  Address: "700 Pine Ave",
+                  City: "Dallas",
+                  Country: "USA",
+                  TaxID: "55-0000007",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  CreatedAt: "2023-06-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {
+                  Vendor_BK: "TSTV007",
+                  VendorName: "Stable Vendor Inc",
+                  ContactName: "Frank Miles",
+                  City: "Dallas",
+                  Country: "USA",
+                  TaxID: "55-0000007",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  EffectiveStart: "2023-06-01",
+                  EffectiveEnd: "9999-12-31",
+                  IsCurrent: 1,
+                  DW_InsertDate: "2023-06-01T00:00:00",
+                  DW_UpdateDate: "2023-06-01T00:00:00",
+                  SourceRowHash: null,
+                }
+        expect:
+          rows:
+            - {
+                Vendor_SK: 76,
+                Vendor_BK: "TSTV007",
+                VendorName: "Stable Vendor Inc",
+                ContactName: "Frank Miles",
+                City: "Dallas",
+                Country: "USA",
+                TaxID: "55-0000007",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2023-06-01",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2023-06-01 00:00:00",
+                DW_UpdateDate: "2023-06-01 00:00:00",
+                SourceRowHash: null,
+              }
+            - {
+                Vendor_SK: 77,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 78,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 79,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 80,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+
+      - name: test_scd2_no_insert_when_source_is_empty
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {
+                  Vendor_BK: "TSTV008",
+                  VendorName: "Pre-existing Vendor",
+                  ContactName: "Grace Kim",
+                  City: "Atlanta",
+                  Country: "USA",
+                  TaxID: "55-0000008",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  EffectiveStart: "2022-01-01",
+                  EffectiveEnd: "9999-12-31",
+                  IsCurrent: 1,
+                  DW_InsertDate: "2022-01-01T00:00:00",
+                  DW_UpdateDate: "2022-01-01T00:00:00",
+                  SourceRowHash: null,
+                }
+        expect:
+          rows:
+            - {
+                Vendor_SK: 81,
+                Vendor_BK: "TSTV008",
+                VendorName: "Pre-existing Vendor",
+                ContactName: "Grace Kim",
+                City: "Atlanta",
+                Country: "USA",
+                TaxID: "55-0000008",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2022-01-01",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2022-01-01 00:00:00",
+                DW_UpdateDate: "2022-01-01 00:00:00",
+                SourceRowHash: null,
+              }
+            - {
+                Vendor_SK: 82,
+                Vendor_BK: "VND001",
+                VendorName: "TechEdge Solutions Inc.",
+                ContactName: "Alex Turner",
+                City: "Austin",
+                Country: "United States",
+                TaxID: "82-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "cc68610fc22d93e101a5feac9cfcf47828128b39da8420d5a4ddbe648e20725d",
+              }
+            - {
+                Vendor_SK: 83,
+                Vendor_BK: "VND002",
+                VendorName: "Global Office Supplies",
+                ContactName: "Priya Sharma",
+                City: "Chicago",
+                Country: "United States",
+                TaxID: "74-9876543",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "13a3b6ca7b27dad3b87138a90deba3db1bff1a01ed634693c3f4b004af3a947b",
+              }
+            - {
+                Vendor_SK: 84,
+                Vendor_BK: "VND003",
+                VendorName: "Rapid Hardware Ltd.",
+                ContactName: "Tom Ferguson",
+                City: "Detroit",
+                Country: "United States",
+                TaxID: "55-1122334",
+                PaymentTerms: "NET45",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "afc604b729c725d8e71627f05681c2bc577f7a1e9ec9b3f55ca881e22ebaadee",
+              }
+            - {
+                Vendor_SK: 85,
+                Vendor_BK: "VND004",
+                VendorName: "Networx Systems Corp.",
+                ContactName: "Elena Volkov",
+                City: "San Jose",
+                Country: "United States",
+                TaxID: "91-5544332",
+                PaymentTerms: "NET60",
+                VendorStatus: "Active",
+                EffectiveStart: "2026-04-07",
+                EffectiveEnd: "9999-12-31",
+                IsCurrent: true,
+                DW_InsertDate: "2026-04-07 05:09:14",
+                DW_UpdateDate: "2026-04-07 05:09:14",
+                SourceRowHash: "4d87c8bb416669ad34de27b4a6103937c0c4f36b98895a19da6a41ba998fa6e7",
+              }
+
+      - name: test_gap_expire_when_hash_differs_from_tracked_attributes
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "VND010",
+                  VendorName: "Updated Vendor Name",
+                  ContactName: "John Doe",
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: "Houston",
+                  Country: "USA",
+                  TaxID: "99-1234567",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  CreatedAt: "2023-01-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {
+                  Vendor_SK: 100,
+                  Vendor_BK: "VND010",
+                  VendorName: "Old Vendor Name",
+                  ContactName: "John Doe",
+                  City: "Houston",
+                  Country: "USA",
+                  TaxID: "99-1234567",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  EffectiveStart: "2023-01-01",
+                  EffectiveEnd: "9999-12-31",
+                  IsCurrent: 1,
+                  DW_InsertDate: "2023-01-01T00:00:00",
+                  DW_UpdateDate: "2023-01-01T00:00:00",
+                  SourceRowHash: "aabbccdd",
+                }
+        expect:
+          rows:
+            - {
+                Vendor_SK: 100,
+                Vendor_BK: "VND010",
+                VendorName: "Old Vendor Name",
+                ContactName: "John Doe",
+                City: "Houston",
+                Country: "USA",
+                TaxID: "99-1234567",
+                PaymentTerms: "NET30",
+                VendorStatus: "Active",
+                EffectiveStart: "2023-01-01",
+                IsCurrent: false,
+              }
+            - {
+                Vendor_BK: "VND010",
+                VendorName: "Updated Vendor Name",
+                IsCurrent: true,
+              }
+
+      - name: test_gap_coalesce_city_null_becomes_unknown
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows:
+              - {
+                  VendorCode: "VND011",
+                  VendorName: "No City Vendor",
+                  ContactName: "Someone",
+                  Email: null,
+                  Phone: null,
+                  Address: null,
+                  City: null,
+                  Country: "USA",
+                  TaxID: "11-1111111",
+                  PaymentTerms: "NET30",
+                  VendorStatus: "Active",
+                  CreatedAt: "2024-01-01",
+                }
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+        expect:
+          rows:
+            - {
+                Vendor_BK: "VND011",
+                City: "Unknown",
+                ContactName: "Someone",
+                IsCurrent: true,
+              }
+
+      - name: test_gap_empty_both_sources_produces_no_rows
+        model: stg_dim_vendor
+        given:
+          - input: source('master', 'Vendors')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+        expect:
+          rows: []
