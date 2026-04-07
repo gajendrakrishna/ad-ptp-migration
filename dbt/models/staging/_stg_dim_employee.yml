@@ -1,0 +1,910 @@
+version: 2
+
+models:
+  - name: stg_dim_employee
+    description: >
+      Migrated from etl.usp_load_dim_employee.
+      Target: dbo.dim_employee. SCD Type 2 model that merges expired,
+      unchanged, and new employee rows from PTP_System.Master.Employees
+      against the existing dbo.dim_employee warehouse table.
+    columns:
+      - name: employee_sk
+        description: "Surrogate key for the employee dimension (IDENTITY)."
+        data_tests:
+          - unique
+          - not_null
+
+      - name: employee_bk
+        description: "Business key for the employee (source: EmployeeCode)."
+        data_tests:
+          - not_null
+
+      - name: full_name
+        description: "Full name of the employee (PII: mask)."
+        meta:
+          contains_pii: true
+          pii_action: "mask"
+
+      - name: email
+        description: "Email address of the employee (PII: mask)."
+        meta:
+          contains_pii: true
+          pii_action: "mask"
+
+      - name: department
+        description: "Department the employee belongs to."
+
+      - name: job_title
+        description: "Job title of the employee."
+
+      - name: is_active
+        description: "Boolean flag; true when the employee is active."
+
+      - name: effective_start
+        description: "SCD2 effective start date for this version."
+
+      - name: effective_end
+        description: "SCD2 effective end date; '9999-12-31' for current rows."
+
+      - name: is_current
+        description: "Boolean flag; true for the current active SCD2 version."
+
+      - name: dw_insert_date
+        description: "Warehouse insert timestamp in UTC."
+
+      - name: source_row_hash
+        description: >
+          SHA2-256 hash of tracked SCD2 columns used to detect changes.
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking."
+
+      - name: _loaded_at
+        description: "Timestamp when the row was loaded by dbt."
+
+    unit_tests:
+      - name: test_scd2_no_expire_when_dw_hash_is_null
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "TSTX002"
+                FullName: "Bob Brown"
+                Email: "bob@example.com"
+                Department: "IT"
+                JobTitle: "Engineer"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2021-03-01"
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_BK: "TSTX002"
+                FullName: "Bob Brown"
+                Email: "bob@example.com"
+                Department: "IT"
+                JobTitle: "Engineer"
+                IsActive: 1
+                EffectiveStart: "2021-03-01"
+                EffectiveEnd: "9999-12-31"
+                IsCurrent: 1
+                DW_InsertDate: "2021-03-01T00:00:00"
+                SourceRowHash: null
+        expect:
+          rows:
+            - Employee_SK: 55
+              Employee_BK: "TSTX002"
+              FullName: "Bob Brown"
+              Email: "bob@example.com"
+              Department: "IT"
+              JobTitle: "Engineer"
+              IsActive: true
+              EffectiveStart: "2021-03-01"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2021-03-01 00:00:00"
+              SourceRowHash: null
+            - Employee_SK: 56
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 57
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 58
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 59
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 60
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 61
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 62
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+
+      - name: test_scd2_no_expire_when_employee_not_in_dw
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "TSTX003"
+                FullName: "Carol White"
+                Email: "carol@example.com"
+                Department: "HR"
+                JobTitle: "Manager"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2022-06-01"
+          - input: source('dbo', 'dim_employee')
+            rows: []
+        expect:
+          rows:
+            - Employee_SK: 63
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 64
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 65
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 66
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 67
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 68
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 69
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+            - Employee_SK: 70
+              Employee_BK: "TSTX003"
+              FullName: "Carol White"
+              Email: "carol@example.com"
+              Department: "HR"
+              JobTitle: "Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "953a5218700254f3e9dc67c0c4e9b57f91748547f568084a6134881bd08d082d"
+
+      - name: test_scd2_insert_new_employee_no_prior_dw_row
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "TSTX004"
+                FullName: "David Lee"
+                Email: "david@example.com"
+                Department: "Operations"
+                JobTitle: "Coordinator"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2023-01-15"
+          - input: source('dbo', 'dim_employee')
+            rows: []
+        expect:
+          rows:
+            - Employee_SK: 71
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 72
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 73
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 74
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 75
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 76
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 77
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+            - Employee_SK: 78
+              Employee_BK: "TSTX004"
+              FullName: "David Lee"
+              Email: "david@example.com"
+              Department: "Operations"
+              JobTitle: "Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7164a43caf6615eea0f9817448208f1e3c4660f04d3c1776568e4a8ba7108328"
+
+      - name: test_scd2_insert_replacement_row_after_expiry
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "TSTX005"
+                FullName: "Eve Turner"
+                Email: "eve@example.com"
+                Department: "Legal"
+                JobTitle: "Counsel"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2019-07-01"
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_BK: "TSTX005"
+                FullName: "Eve Turner"
+                Email: "eve@example.com"
+                Department: "Compliance"
+                JobTitle: "Associate"
+                IsActive: 1
+                EffectiveStart: "2019-07-01"
+                EffectiveEnd: "2024-12-31"
+                IsCurrent: 0
+                DW_InsertDate: "2019-07-01T00:00:00"
+                SourceRowHash: null
+        expect:
+          rows:
+            - Employee_SK: 79
+              Employee_BK: "TSTX005"
+              FullName: "Eve Turner"
+              Email: "eve@example.com"
+              Department: "Compliance"
+              JobTitle: "Associate"
+              IsActive: true
+              EffectiveStart: "2019-07-01"
+              EffectiveEnd: "2024-12-31"
+              IsCurrent: false
+              DW_InsertDate: "2019-07-01 00:00:00"
+              SourceRowHash: null
+            - Employee_SK: 80
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 81
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 82
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 83
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 84
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 85
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 86
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+            - Employee_SK: 87
+              Employee_BK: "TSTX005"
+              FullName: "Eve Turner"
+              Email: "eve@example.com"
+              Department: "Legal"
+              JobTitle: "Counsel"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "97127829e481a8f4e9550d4de060ab6989e56400d3b7506e9480fcc90307776c"
+
+      - name: test_scd2_no_insert_when_current_row_exists
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "TSTX006"
+                FullName: "Frank Miles"
+                Email: "frank@example.com"
+                Department: "Sales"
+                JobTitle: "Rep"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2018-05-10"
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_BK: "TSTX006"
+                FullName: "Frank Miles"
+                Email: "frank@example.com"
+                Department: "Sales"
+                JobTitle: "Rep"
+                IsActive: 1
+                EffectiveStart: "2018-05-10"
+                EffectiveEnd: "9999-12-31"
+                IsCurrent: 1
+                DW_InsertDate: "2018-05-10T00:00:00"
+                SourceRowHash: null
+        expect:
+          rows:
+            - Employee_SK: 88
+              Employee_BK: "TSTX006"
+              FullName: "Frank Miles"
+              Email: "frank@example.com"
+              Department: "Sales"
+              JobTitle: "Rep"
+              IsActive: true
+              EffectiveStart: "2018-05-10"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2018-05-10 00:00:00"
+              SourceRowHash: null
+            - Employee_SK: 89
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 90
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 91
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 92
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 93
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 94
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 95
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+
+      - name: test_scd2_no_insert_when_source_is_empty
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows: []
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_BK: "TSTX007"
+                FullName: "Grace Kim"
+                Email: "grace@example.com"
+                Department: "Marketing"
+                JobTitle: "Specialist"
+                IsActive: 1
+                EffectiveStart: "2020-11-01"
+                EffectiveEnd: "9999-12-31"
+                IsCurrent: 1
+                DW_InsertDate: "2020-11-01T00:00:00"
+                SourceRowHash: null
+        expect:
+          rows:
+            - Employee_SK: 96
+              Employee_BK: "TSTX007"
+              FullName: "Grace Kim"
+              Email: "grace@example.com"
+              Department: "Marketing"
+              JobTitle: "Specialist"
+              IsActive: true
+              EffectiveStart: "2020-11-01"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2020-11-01 00:00:00"
+              SourceRowHash: null
+            - Employee_SK: 97
+              Employee_BK: "EMP001"
+              FullName: "Sarah Mitchell"
+              Email: "sarah.mitchell@corp.com"
+              Department: "Finance"
+              JobTitle: "CFO"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "a51672c03697ead85cdc62bb39c4d51651577021610bcdbbcf7dd7d9cec09c4d"
+            - Employee_SK: 98
+              Employee_BK: "EMP002"
+              FullName: "James Okafor"
+              Email: "james.okafor@corp.com"
+              Department: "Procurement"
+              JobTitle: "VP of Procurement"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "7f92c92fdb9f367725a0fcdc92cf97ae778344ce20c9c72be3e9c15f748db191"
+            - Employee_SK: 99
+              Employee_BK: "EMP003"
+              FullName: "Linda Zhao"
+              Email: "linda.zhao@corp.com"
+              Department: "IT"
+              JobTitle: "IT Manager"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "2fdb6f16cbb33bb6a5bb6f1c6fa675051e536890b0379c2cb659b06a89bd44bd"
+            - Employee_SK: 100
+              Employee_BK: "EMP004"
+              FullName: "Robert Patel"
+              Email: "robert.patel@corp.com"
+              Department: "Procurement"
+              JobTitle: "Senior Buyer"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "cdfb46462a85bc04f516aaa2ca52c538ffde30ff4c906bcda2c39e9a7cc1b339"
+            - Employee_SK: 101
+              Employee_BK: "EMP005"
+              FullName: "Karen Williams"
+              Email: "karen.williams@corp.com"
+              Department: "Operations"
+              JobTitle: "Operations Coordinator"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "84cbd5c092d65d5c6616555b2530ff20b34535faf82f50ea0155c3e9f148ed11"
+            - Employee_SK: 102
+              Employee_BK: "EMP006"
+              FullName: "David Chen"
+              Email: "david.chen@corp.com"
+              Department: "Finance"
+              JobTitle: "AP Specialist"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "70d486a3c89a814d3eba6a61811d169dfb82000451f406e88774e7d904ea946e"
+            - Employee_SK: 103
+              Employee_BK: "EMP007"
+              FullName: "Monica Reyes"
+              Email: "monica.reyes@corp.com"
+              Department: "Warehouse"
+              JobTitle: "Warehouse Supervisor"
+              IsActive: true
+              EffectiveStart: "2026-04-07"
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              DW_InsertDate: "2026-04-07 04:53:52"
+              SourceRowHash: "857f8cef866e1a51e138e35cf9aa1ea3e12b032f646353fedce6ddfb42b88ec6"
+
+      - name: test_gap_expire_and_reinsert_changed_current_row
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "EMP-GAP1"
+                FullName: "Alice New"
+                Email: "alice.new@corp.com"
+                Department: "Finance"
+                JobTitle: "Director"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2020-01-01"
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_SK: 200
+                Employee_BK: "EMP-GAP1"
+                FullName: "Alice Old"
+                Email: "alice.old@corp.com"
+                Department: "Finance"
+                JobTitle: "Manager"
+                IsActive: 1
+                EffectiveStart: "2020-01-01"
+                EffectiveEnd: "9999-12-31"
+                IsCurrent: 1
+                DW_InsertDate: "2020-01-01T00:00:00"
+                SourceRowHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        expect:
+          rows:
+            - Employee_SK: 200
+              Employee_BK: "EMP-GAP1"
+              FullName: "Alice Old"
+              Email: "alice.old@corp.com"
+              Department: "Finance"
+              JobTitle: "Manager"
+              IsActive: true
+              EffectiveStart: "2020-01-01"
+              IsCurrent: false
+              SourceRowHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            - Employee_BK: "EMP-GAP1"
+              FullName: "Alice New"
+              Email: "alice.new@corp.com"
+              Department: "Finance"
+              JobTitle: "Director"
+              IsActive: true
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+
+      - name: test_gap_empty_dw_and_empty_source
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows: []
+          - input: source('dbo', 'dim_employee')
+            rows: []
+        expect:
+          rows: []
+
+      - name: test_gap_multiple_employees_mixed_states
+        model: stg_dim_employee
+        given:
+          - input: source('master', 'employees')
+            rows:
+              - EmployeeCode: "EMP-A"
+                FullName: "Anna Smith"
+                Email: "anna@corp.com"
+                Department: "HR"
+                JobTitle: "Recruiter"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2021-01-01"
+              - EmployeeCode: "EMP-B"
+                FullName: "Ben Jones"
+                Email: "ben@corp.com"
+                Department: "IT"
+                JobTitle: "Dev"
+                ManagerID: null
+                IsActive: 1
+                CreatedAt: "2021-02-01"
+          - input: source('dbo', 'dim_employee')
+            rows:
+              - Employee_SK: 300
+                Employee_BK: "EMP-A"
+                FullName: "Anna Smith"
+                Email: "anna@corp.com"
+                Department: "HR"
+                JobTitle: "Recruiter"
+                IsActive: 1
+                EffectiveStart: "2021-01-01"
+                EffectiveEnd: "9999-12-31"
+                IsCurrent: 1
+                DW_InsertDate: "2021-01-01T00:00:00"
+                SourceRowHash: null
+        expect:
+          rows:
+            - Employee_SK: 300
+              Employee_BK: "EMP-A"
+              FullName: "Anna Smith"
+              Email: "anna@corp.com"
+              Department: "HR"
+              JobTitle: "Recruiter"
+              IsActive: true
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
+              SourceRowHash: null
+            - Employee_BK: "EMP-B"
+              FullName: "Ben Jones"
+              Email: "ben@corp.com"
+              Department: "IT"
+              JobTitle: "Dev"
+              IsActive: true
+              EffectiveEnd: "9999-12-31"
+              IsCurrent: true
