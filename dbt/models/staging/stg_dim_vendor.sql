@@ -1,11 +1,11 @@
 {{ config(materialized='table') }}
 
 with source_vendors as (
-    select * from {{ source('master', 'Vendors') }}
+    select * from {{ source('master', 'vendors') }}
 ),
 
 existing_dim_vendor as (
-    select * from {{ source('dbo', 'Dim_Vendor') }}
+    select * from {{ this }}
 ),
 
 expired_rows as (
@@ -25,7 +25,7 @@ expired_rows as (
         dw.dw_insert_date,
         cast(current_timestamp() as timestamp) as dw_update_date,
         dw.source_row_hash,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from existing_dim_vendor as dw
     inner join source_vendors as src
@@ -71,7 +71,7 @@ new_rows as (
                 src.vendor_status
             )
         ) as source_row_hash,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from source_vendors as src
     where not exists (

@@ -5,7 +5,7 @@ with source_employees as (
 ),
 
 existing_dim_employee as (
-    select * from {{ source('dbo', 'dim_employee') }}
+    select * from {{ this }}
 ),
 
 changed_employees as (
@@ -125,7 +125,7 @@ final as (
         is_current,
         dw_insert_date,
         source_row_hash,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from expired_rows
     union all
@@ -142,7 +142,7 @@ final as (
         is_current,
         dw_insert_date,
         source_row_hash,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from unchanged_rows
     union all
@@ -159,7 +159,7 @@ final as (
         is_current,
         dw_insert_date,
         source_row_hash,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from new_rows
 )

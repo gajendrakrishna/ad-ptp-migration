@@ -1,4 +1,4 @@
-{{ config(materialized='ephemeral') }}
+{{ config(materialized='table') }}
 
 with source_items as (
 
@@ -9,7 +9,7 @@ with source_items as (
 existing_current as (
 
     select product_bk
-    from {{ source('dbo', 'dim_product') }}
+    from {{ this }}
     where iscurrent = 1
 
 ),
@@ -28,7 +28,7 @@ new_versions as (
         cast('9999-12-31' as date) as effectiveend,
         cast(1 as boolean) as iscurrent,
         current_timestamp() as dw_insertdate,
-        {{ invocation_id() }} as _dbt_run_id,
+        {{ invocation_id }} as _dbt_run_id,
         current_timestamp() as _loaded_at
     from source_items as src
     where not exists (

@@ -76,7 +76,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2021-03-01"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_BK: "TSTX002"
                 FullName: "Bob Brown"
@@ -201,7 +201,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2022-06-01"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows: []
         expect:
           rows:
@@ -315,7 +315,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2023-01-15"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows: []
         expect:
           rows:
@@ -429,7 +429,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2019-07-01"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_BK: "TSTX005"
                 FullName: "Eve Turner"
@@ -566,7 +566,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2018-05-10"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_BK: "TSTX006"
                 FullName: "Frank Miles"
@@ -683,7 +683,7 @@ models:
         given:
           - input: source('master', 'employees')
             rows: []
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_BK: "TSTX007"
                 FullName: "Grace Kim"
@@ -808,7 +808,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2020-01-01"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 200
                 Employee_BK: "EMP-GAP1"
@@ -848,7 +848,7 @@ models:
         given:
           - input: source('master', 'employees')
             rows: []
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows: []
         expect:
           rows: []
@@ -874,7 +874,7 @@ models:
                 ManagerID: null
                 IsActive: 1
                 CreatedAt: "2021-02-01"
-          - input: source('dbo', 'dim_employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 300
                 Employee_BK: "EMP-A"

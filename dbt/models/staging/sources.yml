@@ -11,25 +11,33 @@ sources:
 - name: purchasing
   description: Purchasing transactional tables from PTP_System.Purchasing schema
   tables:
-  - name: PurchaseOrders
+  - name: purchaseorders
     description: Purchase order headers
-  - name: PurchaseOrderLines
+  - name: purchaseorderlines
     description: Purchase order line items
-  - name: Requisitions
+  - name: requisitions
     description: Purchase requisition headers
-  - name: RequisitionLines
+  - name: requisitionlines
     description: Purchase requisition line items
-  - name: GoodsReceipts
+  - name: goodsreceipts
     description: Goods receipt headers
-  - name: GoodsReceiptLines
+  - name: goodsreceiptlines
     description: Goods receipt line items
 
 - name: master
   description: Master data tables from PTP_System.Master schema
   tables:
-  - name: Vendors
+  - name: vendors
     description: Vendor master data
-  - name: Items
+  - name: items
     description: Item/product master data
-  - name: Employees
+  - name: employees
     description: Employee master data
+
+- name: finance
+  description: Finance/AP tables — placeholder schema, verify against source system
+  tables:
+  - name: invoices
+    description: AP invoice headers
+  - name: invoicelines
+    description: AP invoice line items

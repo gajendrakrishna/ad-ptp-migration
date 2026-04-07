@@ -155,7 +155,7 @@ final as (
             else null
         end as approval_duration_days,
         current_timestamp() as dw_load_datetime,
-        {{ invocation_id() }} as _dbt_run_id
+        {{ invocation_id }} as _dbt_run_id
     from with_lookups
 )
 

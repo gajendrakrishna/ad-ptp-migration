@@ -33,11 +33,11 @@ dim_date as (
 ),
 
 dim_vendor as (
-    select * from {{ source('dbo', 'dim_vendor') }}
+    select * from {{ ref('stg_dim_vendor') }}
 ),
 
 dim_product as (
-    select * from {{ source('dbo', 'dim_product') }}
+    select * from {{ ref('stg_dim_product') }}
 ),
 
 invoice_lines_joined as (
@@ -176,7 +176,7 @@ final as (
             day, invoicedate, receiveddate
         ) as days_invoice_to_receive,
         current_timestamp() as dw_load_datetime,
-        {{ invocation_id() }} as _dbt_run_id
+        {{ invocation_id }} as _dbt_run_id
     from with_dimension_keys
 )
 

@@ -66,7 +66,7 @@ models:
                 GLAccount: "50001"
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
         expect:
           rows:
@@ -94,7 +94,7 @@ models:
                 GLAccount: "50002"
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
         expect:
           rows:
@@ -122,7 +122,7 @@ models:
                 GLAccount: null
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
         expect:
           rows:
@@ -150,7 +150,7 @@ models:
                 GLAccount: "50004"
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - product_bk: "TST-ITM-S4"
                 iscurrent: 1
@@ -171,7 +171,7 @@ models:
                 GLAccount: "50005"
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - product_bk: "TST-ITM-S5"
                 iscurrent: 0
@@ -192,7 +192,7 @@ models:
         given:
           - input: source('master', 'items')
             rows: []
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
         expect:
           rows: []
@@ -220,7 +220,7 @@ models:
                 GLAccount: "62100"
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - product_bk: "ITM-A"
                 iscurrent: 1
@@ -246,7 +246,7 @@ models:
                 GLAccount: null
                 IsActive: 1
                 CreatedAt: "2023-01-01T00:00:00"
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
         expect:
           rows:

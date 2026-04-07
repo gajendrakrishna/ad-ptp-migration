@@ -32,7 +32,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Date')
+              to: source('dbo', 'dim_date')
               field: Date_SK
 
       - name: expecteddelivery_sk
@@ -42,7 +42,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Date')
+              to: source('dbo', 'dim_date')
               field: Date_SK
 
       - name: vendor_sk
@@ -52,7 +52,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Vendor')
+              to: ref('stg_dim_vendor')
               field: Vendor_SK
 
       - name: product_sk
@@ -62,7 +62,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Product')
+              to: ref('stg_dim_product')
               field: Product_SK
 
       - name: buyer_employee_sk
@@ -72,7 +72,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Employee')
+              to: ref('stg_dim_employee')
               field: Employee_SK
 
       - name: approver_employee_sk
@@ -82,7 +82,7 @@ models:
         data_tests:
           - not_null
           - relationships:
-              to: source('dbo', 'Dim_Employee')
+              to: ref('stg_dim_employee')
               field: Employee_SK
 
       - name: po_status
@@ -135,7 +135,7 @@ models:
       - name: test_happy_path_full_requisition
         model: stg_fact_purchaseorder
         given:
-          - input: source('purchasing', 'PurchaseOrders')
+          - input: source('purchasing', 'purchaseorders')
             rows:
               - PONumber: TST-PO-S1
                 RequisitionID: 7
@@ -153,7 +153,7 @@ models:
                 CreatedAt: '2024-01-10T00:00:00'
                 UpdatedAt: '2024-01-10T00:00:00'
 
-          - input: source('purchasing', 'PurchaseOrderLines')
+          - input: source('purchasing', 'purchaseorderlines')
             rows:
               - POID: 8031
                 LineNumber: 1
@@ -166,7 +166,7 @@ models:
                 LineStatus: Open
                 Notes: null
 
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - VendorID: 10053
                 VendorCode: TST-VND-S1
@@ -182,7 +182,7 @@ models:
                 VendorStatus: Active
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Items')
+          - input: source('master', 'items')
             rows:
               - ItemID: 3053
                 ItemCode: TST-ITM-S1
@@ -195,7 +195,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Employees')
+          - input: source('master', 'employees')
             rows:
               - EmployeeID: 10029
                 EmployeeCode: TST-EMP-S1B
@@ -216,7 +216,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2022-01-01T00:00:00'
 
-          - input: source('purchasing', 'Requisitions')
+          - input: source('purchasing', 'requisitions')
             rows:
               - RequisitionID: 7
                 RequisitionNumber: TST-REQ-S1
@@ -232,7 +232,7 @@ models:
                 CreatedAt: '2024-01-10T00:00:00'
                 UpdatedAt: '2024-01-10T00:00:00'
 
-          - input: source('purchasing', 'RequisitionLines')
+          - input: source('purchasing', 'requisitionlines')
             rows:
               - RequisitionLineID: 9
                 RequisitionID: 7
@@ -243,7 +243,7 @@ models:
                 SuggestedVendorID: null
                 Notes: null
 
-          - input: source('dbo', 'Dim_Date')
+          - input: source('dbo', 'dim_date')
             rows:
               - Date_SK: 20240115
                 FullDate: '2024-01-15'
@@ -286,7 +286,7 @@ models:
                 IsHoliday: 0
                 HolidayName: null
 
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - Vendor_SK: 1
                 Vendor_BK: TST-VND-S1
@@ -304,7 +304,7 @@ models:
                 DW_UpdateDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Product')
+          - input: ref('stg_dim_product')
             rows:
               - Product_SK: 1
                 Product_BK: TST-ITM-S1
@@ -320,7 +320,7 @@ models:
                 DW_InsertDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 1
                 Employee_BK: TST-EMP-S1B
@@ -369,7 +369,7 @@ models:
       - name: test_no_requisition
         model: stg_fact_purchaseorder
         given:
-          - input: source('purchasing', 'PurchaseOrders')
+          - input: source('purchasing', 'purchaseorders')
             rows:
               - PONumber: TST-PO-S2
                 RequisitionID: null
@@ -387,7 +387,7 @@ models:
                 CreatedAt: '2024-01-10T00:00:00'
                 UpdatedAt: '2024-01-10T00:00:00'
 
-          - input: source('purchasing', 'PurchaseOrderLines')
+          - input: source('purchasing', 'purchaseorderlines')
             rows:
               - POID: 8032
                 LineNumber: 1
@@ -400,7 +400,7 @@ models:
                 LineStatus: Open
                 Notes: null
 
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - VendorID: 10054
                 VendorCode: TST-VND-S2
@@ -416,7 +416,7 @@ models:
                 VendorStatus: Active
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Items')
+          - input: source('master', 'items')
             rows:
               - ItemID: 3054
                 ItemCode: TST-ITM-S2
@@ -429,7 +429,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Employees')
+          - input: source('master', 'employees')
             rows:
               - EmployeeID: 10031
                 EmployeeCode: TST-EMP-S2B
@@ -441,13 +441,13 @@ models:
                 IsActive: 1
                 CreatedAt: '2022-01-01T00:00:00'
 
-          - input: source('purchasing', 'Requisitions')
+          - input: source('purchasing', 'requisitions')
             rows: []
 
-          - input: source('purchasing', 'RequisitionLines')
+          - input: source('purchasing', 'requisitionlines')
             rows: []
 
-          - input: source('dbo', 'Dim_Date')
+          - input: source('dbo', 'dim_date')
             rows:
               - Date_SK: 20240201
                 FullDate: '2024-02-01'
@@ -490,7 +490,7 @@ models:
                 IsHoliday: 0
                 HolidayName: null
 
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - Vendor_SK: 2
                 Vendor_BK: TST-VND-S2
@@ -508,7 +508,7 @@ models:
                 DW_UpdateDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Product')
+          - input: ref('stg_dim_product')
             rows:
               - Product_SK: 2
                 Product_BK: TST-ITM-S2
@@ -524,7 +524,7 @@ models:
                 DW_InsertDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 3
                 Employee_BK: TST-EMP-S2B
@@ -561,7 +561,7 @@ models:
       - name: test_gap_vendor_not_in_dim
         model: stg_fact_purchaseorder
         given:
-          - input: source('purchasing', 'PurchaseOrders')
+          - input: source('purchasing', 'purchaseorders')
             rows:
               - PONumber: TST-PO-G1
                 RequisitionID: null
@@ -579,7 +579,7 @@ models:
                 CreatedAt: '2024-02-01T00:00:00'
                 UpdatedAt: '2024-02-01T00:00:00'
 
-          - input: source('purchasing', 'PurchaseOrderLines')
+          - input: source('purchasing', 'purchaseorderlines')
             rows:
               - POID: 9001
                 LineNumber: 1
@@ -592,7 +592,7 @@ models:
                 LineStatus: Open
                 Notes: null
 
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - VendorID: 99999
                 VendorCode: TST-VND-UNKNOWN
@@ -608,7 +608,7 @@ models:
                 VendorStatus: Active
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Items')
+          - input: source('master', 'items')
             rows:
               - ItemID: 3054
                 ItemCode: TST-ITM-S2
@@ -621,7 +621,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Employees')
+          - input: source('master', 'employees')
             rows:
               - EmployeeID: 10031
                 EmployeeCode: TST-EMP-S2B
@@ -633,13 +633,13 @@ models:
                 IsActive: 1
                 CreatedAt: '2022-01-01T00:00:00'
 
-          - input: source('purchasing', 'Requisitions')
+          - input: source('purchasing', 'requisitions')
             rows: []
 
-          - input: source('purchasing', 'RequisitionLines')
+          - input: source('purchasing', 'requisitionlines')
             rows: []
 
-          - input: source('dbo', 'Dim_Date')
+          - input: source('dbo', 'dim_date')
             rows:
               - Date_SK: 20240301
                 FullDate: '2024-03-01'
@@ -682,10 +682,10 @@ models:
                 IsHoliday: 0
                 HolidayName: null
 
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
 
-          - input: source('dbo', 'Dim_Product')
+          - input: ref('stg_dim_product')
             rows:
               - Product_SK: 2
                 Product_BK: TST-ITM-S2
@@ -701,7 +701,7 @@ models:
                 DW_InsertDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 3
                 Employee_BK: TST-EMP-S2B
@@ -738,7 +738,7 @@ models:
       - name: test_gap_estimated_price_lower_than_agreed
         model: stg_fact_purchaseorder
         given:
-          - input: source('purchasing', 'PurchaseOrders')
+          - input: source('purchasing', 'purchaseorders')
             rows:
               - PONumber: TST-PO-G2
                 RequisitionID: 20
@@ -756,7 +756,7 @@ models:
                 CreatedAt: '2024-04-01T00:00:00'
                 UpdatedAt: '2024-04-01T00:00:00'
 
-          - input: source('purchasing', 'PurchaseOrderLines')
+          - input: source('purchasing', 'purchaseorderlines')
             rows:
               - POID: 9002
                 LineNumber: 1
@@ -769,7 +769,7 @@ models:
                 LineStatus: Open
                 Notes: null
 
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - VendorID: 10053
                 VendorCode: TST-VND-S1
@@ -785,7 +785,7 @@ models:
                 VendorStatus: Active
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Items')
+          - input: source('master', 'items')
             rows:
               - ItemID: 3053
                 ItemCode: TST-ITM-S1
@@ -798,7 +798,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2023-01-01T00:00:00'
 
-          - input: source('master', 'Employees')
+          - input: source('master', 'employees')
             rows:
               - EmployeeID: 10029
                 EmployeeCode: TST-EMP-S1B
@@ -810,7 +810,7 @@ models:
                 IsActive: 1
                 CreatedAt: '2022-01-01T00:00:00'
 
-          - input: source('purchasing', 'Requisitions')
+          - input: source('purchasing', 'requisitions')
             rows:
               - RequisitionID: 20
                 RequisitionNumber: TST-REQ-G2
@@ -826,7 +826,7 @@ models:
                 CreatedAt: '2024-04-05T00:00:00'
                 UpdatedAt: '2024-04-05T00:00:00'
 
-          - input: source('purchasing', 'RequisitionLines')
+          - input: source('purchasing', 'requisitionlines')
             rows:
               - RequisitionLineID: 25
                 RequisitionID: 20
@@ -837,7 +837,7 @@ models:
                 SuggestedVendorID: null
                 Notes: null
 
-          - input: source('dbo', 'Dim_Date')
+          - input: source('dbo', 'dim_date')
             rows:
               - Date_SK: 20240410
                 FullDate: '2024-04-10'
@@ -880,7 +880,7 @@ models:
                 IsHoliday: 0
                 HolidayName: null
 
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - Vendor_SK: 1
                 Vendor_BK: TST-VND-S1
@@ -898,7 +898,7 @@ models:
                 DW_UpdateDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Product')
+          - input: ref('stg_dim_product')
             rows:
               - Product_SK: 1
                 Product_BK: TST-ITM-S1
@@ -914,7 +914,7 @@ models:
                 DW_InsertDate: '2024-01-01T00:00:00'
                 SourceRowHash: null
 
-          - input: source('dbo', 'Dim_Employee')
+          - input: ref('stg_dim_employee')
             rows:
               - Employee_SK: 1
                 Employee_BK: TST-EMP-S1B

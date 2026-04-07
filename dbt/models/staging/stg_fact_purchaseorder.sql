@@ -5,47 +5,47 @@
 ) }}
 
 with source_purchase_orders as (
-    select * from {{ source('purchasing', 'PurchaseOrders') }}
+    select * from {{ source('purchasing', 'purchaseorders') }}
 ),
 
 source_purchase_order_lines as (
-    select * from {{ source('purchasing', 'PurchaseOrderLines') }}
+    select * from {{ source('purchasing', 'purchaseorderlines') }}
 ),
 
 source_vendors as (
-    select * from {{ source('master', 'Vendors') }}
+    select * from {{ source('master', 'vendors') }}
 ),
 
 source_items as (
-    select * from {{ source('master', 'Items') }}
+    select * from {{ source('master', 'items') }}
 ),
 
 source_employees as (
-    select * from {{ source('master', 'Employees') }}
+    select * from {{ source('master', 'employees') }}
 ),
 
 source_requisitions as (
-    select * from {{ source('purchasing', 'Requisitions') }}
+    select * from {{ source('purchasing', 'requisitions') }}
 ),
 
 source_requisition_lines as (
-    select * from {{ source('purchasing', 'RequisitionLines') }}
+    select * from {{ source('purchasing', 'requisitionlines') }}
 ),
 
 dim_date as (
-    select * from {{ source('dbo', 'Dim_Date') }}
+    select * from {{ source('dbo', 'dim_date') }}
 ),
 
 dim_vendor as (
-    select * from {{ source('dbo', 'Dim_Vendor') }}
+    select * from {{ ref('stg_dim_vendor') }}
 ),
 
 dim_product as (
-    select * from {{ source('dbo', 'Dim_Product') }}
+    select * from {{ ref('stg_dim_product') }}
 ),
 
 dim_employee as (
-    select * from {{ source('dbo', 'Dim_Employee') }}
+    select * from {{ ref('stg_dim_employee') }}
 ),
 
 po_lines_joined as (
@@ -187,7 +187,7 @@ final as (
             else null
         end as approval_duration_days,
         current_timestamp() as dw_load_datetime,
-        {{ invocation_id() }} as _dbt_run_id
+        {{ invocation_id }} as _dbt_run_id
     from po_with_dim_sks
 )
 

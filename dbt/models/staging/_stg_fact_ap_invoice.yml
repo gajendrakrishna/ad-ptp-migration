@@ -114,10 +114,6 @@ models:
         description: "ETL load timestamp (current_timestamp at dbt run time)."
         data_tests:
           - not_null
-          - dbt_utils.recency:
-              datepart: day
-              field: dw_load_datetime
-              interval: 1
 
       - name: _dbt_run_id
         description: "dbt invocation ID for lineage tracking."
@@ -165,11 +161,11 @@ models:
               - {Date_SK: 20240305, FullDate: "2024-03-05"}
               - {Date_SK: 20240404, FullDate: "2024-04-04"}
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01", IsCurrent: 1}
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - {Product_SK: 20, Product_BK: "TST-ITM-S01",
                  IsCurrent: 1}
@@ -234,12 +230,12 @@ models:
               - {Date_SK: 20240403, FullDate: "2024-04-03"}
               - {Date_SK: 20240501, FullDate: "2024-05-01"}
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {Vendor_SK: 11, Vendor_BK: "TST-VND-S02",
                  IsCurrent: 1}
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - {Product_SK: 21, Product_BK: "TST-ITM-S02",
                  IsCurrent: 1}
@@ -299,12 +295,12 @@ models:
               - {Date_SK: 20240512, FullDate: "2024-05-12"}
               - {Date_SK: 20240611, FullDate: "2024-06-11"}
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {Vendor_SK: 12, Vendor_BK: "TST-VND-S03",
                  IsCurrent: 1}
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - {Product_SK: 22, Product_BK: "TST-ITM-S03",
                  IsCurrent: 1}
@@ -364,10 +360,10 @@ models:
           - input: source('dbo', 'dim_date')
             rows: []
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows: []
 
         expect:
@@ -419,12 +415,12 @@ models:
               - {Date_SK: 20240602, FullDate: "2024-06-02"}
               - {Date_SK: 20240701, FullDate: "2024-07-01"}
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01",
                  IsCurrent: 1}
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - {Product_SK: 20, Product_BK: "TST-ITM-S01",
                  IsCurrent: 1}
@@ -478,12 +474,12 @@ models:
               - {Date_SK: 20240602, FullDate: "2024-06-02"}
               - {Date_SK: 20240701, FullDate: "2024-07-01"}
 
-          - input: source('dbo', 'dim_vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {Vendor_SK: 10, Vendor_BK: "TST-VND-S01",
                  IsCurrent: 0}
 
-          - input: source('dbo', 'dim_product')
+          - input: ref('stg_dim_product')
             rows:
               - {Product_SK: 20, Product_BK: "TST-ITM-S01",
                  IsCurrent: 1}

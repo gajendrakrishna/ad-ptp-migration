@@ -77,7 +77,7 @@ models:
       - name: test_scd2_no_expire_when_dw_hash_is_null
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV001",
@@ -93,7 +93,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2024-01-15",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {
                   Vendor_BK: "TSTV001",
@@ -202,7 +202,7 @@ models:
       - name: test_scd2_no_expire_when_vendor_not_in_dw
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV002",
@@ -218,7 +218,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2024-02-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
         expect:
           rows:
@@ -311,7 +311,7 @@ models:
       - name: test_scd2_insert_new_vendor_no_prior_dw_row
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV003",
@@ -327,7 +327,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2025-01-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
         expect:
           rows:
@@ -420,7 +420,7 @@ models:
       - name: test_scd2_insert_new_vendor_null_optional_fields
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV004",
@@ -436,7 +436,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2024-03-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
         expect:
           rows:
@@ -529,7 +529,7 @@ models:
       - name: test_scd2_insert_replacement_row_after_expiry
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV006",
@@ -545,7 +545,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2024-01-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {
                   Vendor_BK: "TSTV006",
@@ -671,7 +671,7 @@ models:
       - name: test_scd2_no_insert_when_current_row_exists
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "TSTV007",
@@ -687,7 +687,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2023-06-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {
                   Vendor_BK: "TSTV007",
@@ -796,9 +796,9 @@ models:
       - name: test_scd2_no_insert_when_source_is_empty
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows: []
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {
                   Vendor_BK: "TSTV008",
@@ -907,7 +907,7 @@ models:
       - name: test_gap_expire_when_hash_differs_from_tracked_attributes
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "VND010",
@@ -923,7 +923,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2023-01-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows:
               - {
                   Vendor_SK: 100,
@@ -966,7 +966,7 @@ models:
       - name: test_gap_coalesce_city_null_becomes_unknown
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows:
               - {
                   VendorCode: "VND011",
@@ -982,7 +982,7 @@ models:
                   VendorStatus: "Active",
                   CreatedAt: "2024-01-01",
                 }
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
         expect:
           rows:
@@ -996,9 +996,9 @@ models:
       - name: test_gap_empty_both_sources_produces_no_rows
         model: stg_dim_vendor
         given:
-          - input: source('master', 'Vendors')
+          - input: source('master', 'vendors')
             rows: []
-          - input: source('dbo', 'Dim_Vendor')
+          - input: ref('stg_dim_vendor')
             rows: []
         expect:
           rows: []

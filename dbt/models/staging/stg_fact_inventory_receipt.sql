@@ -5,31 +5,31 @@
 ) }}
 
 with source_gr_lines as (
-    select * from {{ source('purchasing', 'GoodsReceiptLines') }}
+    select * from {{ source('purchasing', 'goodsreceiptlines') }}
 ),
 
 source_gr as (
-    select * from {{ source('purchasing', 'GoodsReceipts') }}
+    select * from {{ source('purchasing', 'goodsreceipts') }}
 ),
 
 source_po_lines as (
-    select * from {{ source('purchasing', 'PurchaseOrderLines') }}
+    select * from {{ source('purchasing', 'purchaseorderlines') }}
 ),
 
 source_po as (
-    select * from {{ source('purchasing', 'PurchaseOrders') }}
+    select * from {{ source('purchasing', 'purchaseorders') }}
 ),
 
 source_vendors as (
-    select * from {{ source('master', 'Vendors') }}
+    select * from {{ source('master', 'vendors') }}
 ),
 
 source_items as (
-    select * from {{ source('master', 'Items') }}
+    select * from {{ source('master', 'items') }}
 ),
 
 source_employees as (
-    select * from {{ source('master', 'Employees') }}
+    select * from {{ source('master', 'employees') }}
 ),
 
 dim_date as (
@@ -37,15 +37,15 @@ dim_date as (
 ),
 
 dim_vendor as (
-    select * from {{ source('dbo', 'Dim_Vendor') }}
+    select * from {{ ref('stg_dim_vendor') }}
 ),
 
 dim_product as (
-    select * from {{ source('dbo', 'Dim_Product') }}
+    select * from {{ ref('stg_dim_product') }}
 ),
 
 dim_employee as (
-    select * from {{ source('dbo', 'Dim_Employee') }}
+    select * from {{ ref('stg_dim_employee') }}
 ),
 
 dim_location as (
@@ -179,7 +179,7 @@ final as (
             else null
         end as delivery_variance_days,
         current_timestamp() as dw_load_datetime,
-        {{ invocation_id() }} as _dbt_run_id
+        {{ invocation_id }} as _dbt_run_id
     from receipts_with_dims as rwd
     left join dim_date as d_rcv
         on d_rcv.date_sk = cast(
