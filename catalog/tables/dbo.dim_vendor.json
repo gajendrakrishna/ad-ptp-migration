@@ -422,5 +422,49 @@
     ],
     "hash_algorithm": "SHA2_256",
     "notes": "SCD Type 2 via two-phase expire+insert. Hash covers 5 attributes. Country and TaxID are loaded but not tracked for change detection."
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_dim_vendor",
+    "classification": {
+      "resolved_kind": "dim_scd2",
+      "source": "llm",
+      "rationale": "The writer proc uses a two-phase pattern: Phase 1 expires changed rows by setting EffectiveEnd and IsCurrent=0; Phase 2 inserts new and re-versioned rows. The table has EffectiveStart, EffectiveEnd, and IsCurrent columns, which are canonical SCD Type 2 column-shape signals."
+    },
+    "primary_key": {
+      "columns": [
+        "Vendor_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Dim_Vendor on Vendor_SK; the column is an identity auto-increment, confirming it as a system-assigned surrogate key."
+    },
+    "foreign_keys": [],
+    "natural_key": {
+      "columns": [
+        "Vendor_BK"
+      ],
+      "source": "catalog+llm",
+      "rationale": "The identity on Vendor_SK confirms it as surrogate; the proc Phase 1 joins on dw.Vendor_BK = src.VendorCode to identify rows for expiry, confirming Vendor_BK as the business natural key."
+    },
+    "watermark": {
+      "column": "DW_InsertDate",
+      "source": "llm",
+      "rationale": "The proc performs full hash-based comparison with no watermark filter; DW_InsertDate (DATETIME2) is the best available datetime column for tracking insertion order in incremental reads."
+    },
+    "pii_actions": [
+      {
+        "column": "ContactName",
+        "suggested_action": "mask",
+        "source": "llm",
+        "rationale": "ContactName is a person name (NVARCHAR), matching the full_name PII pattern; no catalog classification present so flagged via column-name analysis."
+      },
+      {
+        "column": "TaxID",
+        "suggested_action": "mask",
+        "source": "llm",
+        "rationale": "TaxID is a tax identifier (VARCHAR), a sensitive business identifier that warrants masking; no catalog classification present so flagged via column-name analysis."
+      }
+    ]
   }
 }

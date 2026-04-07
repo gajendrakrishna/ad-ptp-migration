@@ -422,11 +422,116 @@
         {
           "type": "INSERT",
           "action": "migrate",
-          "note": "Core transformation logic \u2014 all non-identity columns populated"
+          "note": "Core transformation logic — all non-identity columns populated"
         }
       ],
       "logic_summary": "Full reload via TRUNCATE + INSERT. Joins requisition headers and lines from PTP_System, resolves surrogate keys against DW dimensions (date, employee x2, product, vendor) with ISNULL defaults. Derives status flags and approval duration from RequisitionStatus and date fields."
     },
     "warnings": []
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_fact_requisition",
+    "classification": {
+      "resolved_kind": "fact_transaction",
+      "source": "llm",
+      "rationale": "The proc performs a full TRUNCATE + INSERT with grain of one row per requisition line event; measures (Quantity, Estimated_Unit_Price, Approval_Duration_Days) and status flags are attributes of a procurement transaction event, and the column shape of multiple _sk FK columns plus numeric measures confirms fact_transaction rather than periodic_snapshot."
+    },
+    "primary_key": {
+      "columns": [
+        "Fact_Requisition_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Fact_Requisition on Fact_Requisition_SK, and auto_increment_columns confirms it is an IDENTITY column — definitively surrogate."
+    },
+    "foreign_keys": [
+      {
+        "columns": [
+          "Approver_Employee_SK"
+        ],
+        "referenced_table": "dbo.Dim_Employee",
+        "referenced_columns": [
+          "Employee_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two distinct fact columns (Requestor_Employee_SK and Approver_Employee_SK) both FK to Dim_Employee.Employee_SK, satisfying the role_playing rule."
+      },
+      {
+        "columns": [
+          "Requestor_Employee_SK"
+        ],
+        "referenced_table": "dbo.Dim_Employee",
+        "referenced_columns": [
+          "Employee_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two distinct fact columns (Requestor_Employee_SK and Approver_Employee_SK) both FK to Dim_Employee.Employee_SK, satisfying the role_playing rule."
+      },
+      {
+        "columns": [
+          "Product_SK"
+        ],
+        "referenced_table": "dbo.Dim_Product",
+        "referenced_columns": [
+          "Product_SK"
+        ],
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension with no multi-role pattern."
+      },
+      {
+        "columns": [
+          "RequisitionDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_columns": [
+          "Date_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two distinct fact columns (RequisitionDate_SK and RequiredByDate_SK) both FK to Dim_Date.Date_SK, satisfying the role_playing rule."
+      },
+      {
+        "columns": [
+          "RequiredByDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_columns": [
+          "Date_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "Two distinct fact columns (RequisitionDate_SK and RequiredByDate_SK) both FK to Dim_Date.Date_SK, satisfying the role_playing rule."
+      },
+      {
+        "columns": [
+          "SuggestedVendor_SK"
+        ],
+        "referenced_table": "dbo.Dim_Vendor",
+        "referenced_columns": [
+          "Vendor_SK"
+        ],
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Single fact column joining one dimension with no multi-role pattern."
+      }
+    ],
+    "natural_key": {
+      "columns": [
+        "Requisition_BK",
+        "RequisitionLine_BK"
+      ],
+      "source": "llm",
+      "rationale": "The proc inserts Requisition_BK (RequisitionNumber, VARCHAR(20)) and RequisitionLine_BK (RequisitionLineID, INT) as the business grain — one row per requisition line uniquely identified by these two columns."
+    },
+    "watermark": {
+      "column": "DW_Load_DateTime",
+      "source": "llm",
+      "rationale": "The proc performs a full TRUNCATE + INSERT with no incremental WHERE filter; DW_Load_DateTime (DATETIME2) is the ETL batch load timestamp and the recommended dbt materialization is table (full refresh) rather than incremental."
+    },
+    "pii_actions": []
   }
 }

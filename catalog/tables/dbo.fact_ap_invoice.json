@@ -645,5 +645,103 @@
       "Is_Paid: derived from InvoiceStatus = 'Paid'"
     ],
     "notes": "Truncate-insert full-refresh pattern. Sources from PTP_System transactional tables; resolves surrogate keys via Dim_Date (yyyyMMdd INT cast), Dim_Vendor and Dim_Product (IsCurrent=1 lookup)."
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_fact_ap_invoice",
+    "classification": {
+      "resolved_kind": "fact_periodic_snapshot",
+      "source": "llm",
+      "rationale": "The writer proc uses TRUNCATE followed by a full INSERT with measure columns and multiple FK surrogate keys, matching the TRUNCATE+INSERT with measure+FK columns signal for fact_periodic_snapshot."
+    },
+    "primary_key": {
+      "columns": [
+        "Fact_Invoice_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Fact_Invoice on Fact_Invoice_SK, which is also an identity (auto-increment) column."
+    },
+    "natural_key": {
+      "columns": [
+        "Invoice_BK",
+        "Invoice_Line_Number"
+      ],
+      "source": "catalog+llm",
+      "rationale": "Invoice_BK (InternalInvoiceRef from source) combined with Invoice_Line_Number uniquely identifies each invoice line, representing the business grain loaded by the writer proc."
+    },
+    "watermark": {
+      "column": "DW_Load_DateTime",
+      "source": "llm",
+      "rationale": "DW_Load_DateTime is a DATETIME2 NOT NULL column matching the _dttm naming pattern; the proc performs full TRUNCATE+INSERT so this ETL load timestamp serves as the watermark for downstream incremental tracking."
+    },
+    "foreign_keys": [
+      {
+        "constraint_name": "FK_FactInv_InvDate",
+        "columns": [
+          "InvoiceDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_columns": [
+          "Date_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "InvoiceDate_SK is one of three distinct date foreign keys all joining Dim_Date, making it a role-playing dimension relationship."
+      },
+      {
+        "constraint_name": "FK_FactInv_RcvDate",
+        "columns": [
+          "ReceivedDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_columns": [
+          "Date_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "ReceivedDate_SK is the second of three date roles joining the same Dim_Date dimension, representing the AP receipt date."
+      },
+      {
+        "constraint_name": "FK_FactInv_DueDate",
+        "columns": [
+          "DueDate_SK"
+        ],
+        "referenced_table": "dbo.Dim_Date",
+        "referenced_columns": [
+          "Date_SK"
+        ],
+        "fk_type": "role_playing",
+        "source": "catalog+llm",
+        "rationale": "DueDate_SK is the third date role joining Dim_Date, representing the invoice payment due date."
+      },
+      {
+        "constraint_name": "FK_FactInv_Vendor",
+        "columns": [
+          "Vendor_SK"
+        ],
+        "referenced_table": "dbo.Dim_Vendor",
+        "referenced_columns": [
+          "Vendor_SK"
+        ],
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Vendor_SK joins a single Dim_Vendor dimension with no multi-role pattern; standard conformed dimension relationship."
+      },
+      {
+        "constraint_name": "FK_FactInv_Product",
+        "columns": [
+          "Product_SK"
+        ],
+        "referenced_table": "dbo.Dim_Product",
+        "referenced_columns": [
+          "Product_SK"
+        ],
+        "fk_type": "standard",
+        "source": "catalog+llm",
+        "rationale": "Product_SK joins a single Dim_Product dimension with no multi-role pattern; standard conformed dimension relationship."
+      }
+    ],
+    "pii_actions": []
   }
 }
