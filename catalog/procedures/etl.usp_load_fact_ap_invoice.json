@@ -373,5 +373,35 @@
   "ddl_hash": "7cc98aba9664067effe72bc5a9ddda54641950019ff0ec637877161fa1e83d01",
   "needs_enrich": true,
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; no transformation logic."
+    },
+    {
+      "type": "Truncate",
+      "action": "skip",
+      "sql": "TRUNCATE TABLE dbo.Fact_AP_Invoice",
+      "source": "llm",
+      "rationale": "Full-reload truncate. Handled by dbt table materialization (CREATE OR REPLACE) — no equivalent needed in model SQL."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": "INSERT INTO dbo.Fact_AP_Invoice (...) SELECT inv.InternalInvoiceRef, inv.InvoiceNumber, il.LineNumber, po.PONumber, ISNULL(d_inv.Date_SK,0), ISNULL(d_rcv.Date_SK,0), ISNULL(d_due.Date_SK,0), ISNULL(vnd.Vendor_SK,-1), ISNULL(prod.Product_SK,-1), inv.InvoiceStatus, inv.MatchStatus, CASE WHEN inv.MatchStatus='Matched' THEN 1 ELSE 0 END, CASE WHEN inv.InvoiceStatus='Disputed' THEN 1 ELSE 0 END, CASE WHEN inv.InvoiceStatus='Paid' THEN 1 ELSE 0 END, il.QuantityBilled, il.InvoicedUnitPrice, pol.AgreedUnitPrice, CAST(il.QuantityBilled*il.InvoicedUnitPrice AS DECIMAL(18,2)), CAST(il.QuantityBilled*pol.AgreedUnitPrice AS DECIMAL(18,2)), CAST((il.InvoicedUnitPrice-pol.AgreedUnitPrice)*il.QuantityBilled AS DECIMAL(18,2)), CASE WHEN pol.AgreedUnitPrice<>0 THEN CAST(((il.InvoicedUnitPrice-pol.AgreedUnitPrice)/pol.AgreedUnitPrice)*100 AS DECIMAL(8,4)) ELSE NULL END, DATEDIFF(DAY,inv.InvoiceDate,inv.DueDate), DATEDIFF(DAY,inv.InvoiceDate,inv.ReceivedDate) FROM PTP_System.Finance.Invoices inv INNER JOIN PTP_System.Finance.InvoiceLines il ON il.InvoiceID=inv.InvoiceID INNER JOIN PTP_System.Purchasing.PurchaseOrderLines pol ON pol.POLineID=il.POLineID INNER JOIN PTP_System.Purchasing.PurchaseOrders po ON po.POID=pol.POID INNER JOIN PTP_System.Master.Vendors src_vnd ON src_vnd.VendorID=inv.VendorID INNER JOIN PTP_System.Master.Items src_itm ON src_itm.ItemID=il.ItemID LEFT JOIN dbo.Dim_Date d_inv ON d_inv.Date_SK=CAST(FORMAT(inv.InvoiceDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Date d_rcv ON d_rcv.Date_SK=CAST(FORMAT(inv.ReceivedDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Date d_due ON d_due.Date_SK=CAST(FORMAT(inv.DueDate,'yyyyMMdd') AS INT) LEFT JOIN dbo.Dim_Vendor vnd ON vnd.Vendor_BK=src_vnd.VendorCode AND vnd.IsCurrent=1 LEFT JOIN dbo.Dim_Product prod ON prod.Product_BK=src_itm.ItemCode AND prod.IsCurrent=1",
+      "source": "llm",
+      "rationale": "Core AP Invoice fact transformation: joins invoice lines to PO lines, resolves dimension surrogate keys, computes price variance, percentage variance, and AP timing KPIs. The SELECT becomes the dbt model SQL."
+    },
+    {
+      "type": "Print",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Fact_AP_Invoice: ', @@ROWCOUNT, ' rows loaded.')",
+      "source": "llm",
+      "rationale": "Operational logging. Not needed in dbt."
+    }
+  ]
 }

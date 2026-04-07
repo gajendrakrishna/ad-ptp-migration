@@ -148,5 +148,70 @@
   },
   "ddl_hash": "5e97986f664d55e9c93de69204f370803b064e4fbe9553ee94a3a3a0d015b023",
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET NOCOUNT ON",
+      "source": "llm",
+      "rationale": "Session setting; suppresses row-count messages. No transformation logic — not needed in dbt."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "sql": "DECLARE @Today DATE = CAST(GETDATE() AS DATE)",
+      "source": "llm",
+      "rationale": "Variable declaration for today's date. Replaced by dbt current_date macro."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "sql": "DECLARE @Expired INT = 0",
+      "source": "llm",
+      "rationale": "Row-count tracking variable. Not applicable in dbt set-based model."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "sql": "DECLARE @Inserted INT = 0",
+      "source": "llm",
+      "rationale": "Row-count tracking variable. Not applicable in dbt set-based model."
+    },
+    {
+      "type": "Update",
+      "action": "migrate",
+      "sql": "UPDATE dw SET dw.EffectiveEnd = DATEADD(DAY, -1, @Today), dw.IsCurrent = 0, dw.DW_UpdateDate = SYSUTCDATETIME() FROM dbo.Dim_Vendor dw INNER JOIN PTP_System.Master.Vendors src ON dw.Vendor_BK = src.VendorCode AND dw.IsCurrent = 1 WHERE dw.SourceRowHash <> HASHBYTES('SHA2_256', CONCAT_WS('|', src.VendorName, ISNULL(src.ContactName,''), ISNULL(src.City,''), src.PaymentTerms, src.VendorStatus))",
+      "source": "llm",
+      "rationale": "SCD2 Phase 1: expire rows whose tracked attributes have changed by setting EffectiveEnd and IsCurrent=0. Becomes the dbt snapshot strategy's invalidation logic."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET @Expired = @@ROWCOUNT",
+      "source": "llm",
+      "rationale": "Row-count capture for PRINT logging. No transformation logic."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "sql": "INSERT INTO dbo.Dim_Vendor (Vendor_BK, VendorName, ContactName, City, Country, TaxID, PaymentTerms, VendorStatus, EffectiveStart, EffectiveEnd, IsCurrent, DW_InsertDate, SourceRowHash) SELECT src.VendorCode, src.VendorName, ISNULL(src.ContactName,'Unknown'), ISNULL(src.City,'Unknown'), ISNULL(src.Country,'Unknown'), ISNULL(src.TaxID,'Unknown'), src.PaymentTerms, src.VendorStatus, @Today, '9999-12-31', 1, SYSUTCDATETIME(), HASHBYTES('SHA2_256', CONCAT_WS('|', src.VendorName, ISNULL(src.ContactName,''), ISNULL(src.City,''), src.PaymentTerms, src.VendorStatus)) FROM PTP_System.Master.Vendors src WHERE NOT EXISTS (SELECT 1 FROM dbo.Dim_Vendor dw WHERE dw.Vendor_BK = src.VendorCode AND dw.IsCurrent = 1)",
+      "source": "llm",
+      "rationale": "SCD2 Phase 2: insert net-new business keys and new versions of expired rows with fresh EffectiveStart and SourceRowHash. The SELECT clause becomes the dbt model query."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "sql": "SET @Inserted = @@ROWCOUNT",
+      "source": "llm",
+      "rationale": "Row-count capture for PRINT logging. No transformation logic."
+    },
+    {
+      "type": "Print",
+      "action": "skip",
+      "sql": "PRINT CONCAT('usp_Load_Dim_Vendor: ', @Inserted, ' inserted, ', @Expired, ' expired.')",
+      "source": "llm",
+      "rationale": "Operational logging. No transformation logic — not needed in dbt."
+    }
+  ]
 }

@@ -123,5 +123,63 @@
   },
   "ddl_hash": "75cb26083749bc7ebee943382e556c9a2d0752a23ecd6905ffaa6e33e2e0e626",
   "mode": "deterministic",
-  "routing_reasons": []
+  "routing_reasons": [],
+  "statements": [
+    {
+      "type": "Set",
+      "action": "skip",
+      "source": "llm",
+      "sql": "SET NOCOUNT ON",
+      "rationale": "Session configuration statement that suppresses row-count messages; dbt does not require this and it carries no transformation logic."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "source": "llm",
+      "sql": "DECLARE @Today AS DATE = CAST(GETDATE() AS DATE)",
+      "rationale": "Variable declaration used only to parameterise the SCD date values; no data transformation — dbt expressions replace this inline."
+    },
+    {
+      "type": "Declare",
+      "action": "skip",
+      "source": "llm",
+      "sql": "DECLARE @Expired AS INTEGER = 0, @Inserted AS INTEGER = 0",
+      "rationale": "Operational row-count accumulators used solely for the PRINT logging statement; carry no transformation logic."
+    },
+    {
+      "type": "Update",
+      "action": "migrate",
+      "source": "llm",
+      "sql": "UPDATE dw SET dw.EffectiveEnd = DATEADD(DAY, -1, @Today), dw.IsCurrent = 0 FROM dbo.Dim_Employee AS dw INNER JOIN PTP_System.Master.Employees AS src ON dw.Employee_BK = src.EmployeeCode AND dw.IsCurrent = 1 WHERE dw.SourceRowHash <> HASHBYTES('SHA2_256', CONCAT_WS('|', src.FullName, src.Email, src.Department, src.JobTitle, CAST(src.IsActive AS CHAR(1))))",
+      "rationale": "SCD Type 2 expiry phase — core transformation logic that closes changed employee rows by setting EffectiveEnd and IsCurrent=0; must be represented in the dbt model."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "source": "llm",
+      "sql": "SET @Expired = @@ROWCOUNT",
+      "rationale": "Captures the UPDATE row count into a local variable used only for PRINT logging; no transformation logic."
+    },
+    {
+      "type": "Insert",
+      "action": "migrate",
+      "source": "llm",
+      "sql": "INSERT INTO dbo.Dim_Employee (Employee_BK, FullName, Email, Department, JobTitle, IsActive, EffectiveStart, EffectiveEnd, IsCurrent, DW_InsertDate, SourceRowHash) SELECT src.EmployeeCode, src.FullName, src.Email, src.Department, src.JobTitle, src.IsActive, @Today, '9999-12-31', 1, SYSUTCDATETIME(), HASHBYTES('SHA2_256', CONCAT_WS('|', src.FullName, src.Email, src.Department, src.JobTitle, CAST(src.IsActive AS CHAR(1)))) FROM PTP_System.Master.Employees src WHERE NOT EXISTS (SELECT 1 FROM dbo.Dim_Employee dw WHERE dw.Employee_BK = src.EmployeeCode AND dw.IsCurrent = 1)",
+      "rationale": "SCD Type 2 insert phase — core transformation logic that inserts new and replacement employee rows from the source system; must be represented in the dbt model."
+    },
+    {
+      "type": "Set",
+      "action": "skip",
+      "source": "llm",
+      "sql": "SET @Inserted = @@ROWCOUNT",
+      "rationale": "Captures the INSERT row count into a local variable used only for PRINT logging; no transformation logic."
+    },
+    {
+      "type": "Command",
+      "action": "skip",
+      "source": "llm",
+      "sql": "PRINT CONCAT('usp_Load_Dim_Employee: ', @Inserted, ' inserted, ', @Expired, ' expired.')",
+      "rationale": "Logging-only PRINT statement that reports operational row counts; carries no transformation logic and is irrelevant in dbt."
+    }
+  ]
 }
