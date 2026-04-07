@@ -1,0 +1,738 @@
+version: 2
+
+models:
+  - name: stg_fact_inventory_receipt
+    description: >-
+      Migrated from etl.usp_Load_Fact_Inventory_Receipt.
+      Target: dbo.fact_inventory_receipt.
+      Computes running cumulative received quantity per PO line and resolves
+      dimension surrogate keys for the goods receipt fact table.
+    columns:
+      - name: gr_bk
+        description: "Degenerate dimension - goods receipt number (business key)"
+        data_tests:
+          - not_null
+
+      - name: po_bk
+        description: "Degenerate dimension - purchase order number (business key)"
+        data_tests:
+          - not_null
+
+      - name: receiptdate_sk
+        description: "Foreign key to dim_date for the actual receipt date; 0 when unresolved"
+        data_tests:
+          - not_null
+
+      - name: expecteddelivery_sk
+        description: "Foreign key to dim_date for the expected delivery date; 0 when unresolved"
+        data_tests:
+          - not_null
+
+      - name: vendor_sk
+        description: "Foreign key to dim_vendor (current SCD2 row); -1 when unresolved"
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('dbo', 'Dim_Vendor')
+              field: vendor_sk
+              config:
+                where: "vendor_sk != -1"
+
+      - name: product_sk
+        description: "Foreign key to dim_product (current SCD2 row); -1 when unresolved"
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('dbo', 'Dim_Product')
+              field: product_sk
+              config:
+                where: "product_sk != -1"
+
+      - name: location_sk
+        description: "Foreign key to dim_location via rule-based category mapping; -1 when unresolved"
+        data_tests:
+          - not_null
+
+      - name: receivedby_employee_sk
+        description: "Foreign key to dim_employee for receiving employee (current SCD2 row); -1 when unresolved"
+        data_tests:
+          - not_null
+
+      - name: gr_status
+        description: "Goods receipt status; only 'Posted' receipts are loaded"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Posted']
+
+      - name: quantity_ordered
+        description: "Quantity ordered on the PO line"
+        data_tests:
+          - not_null
+
+      - name: quantity_this_receipt
+        description: "Quantity received in this individual goods receipt line"
+        data_tests:
+          - not_null
+
+      - name: cumulative_qty_received
+        description: "Running cumulative quantity received against the PO line across all receipts in chronological order"
+        data_tests:
+          - not_null
+
+      - name: quantity_outstanding
+        description: "Remaining quantity outstanding on the PO line (ordered minus cumulative)"
+        data_tests:
+          - not_null
+
+      - name: receipt_completeness_pct
+        description: "Percentage of PO line quantity fulfilled by cumulative receipts"
+        data_tests:
+          - not_null
+
+      - name: lead_time_days
+        description: "Lead time in days from PO date to goods receipt date"
+        data_tests:
+          - not_null
+
+      - name: delivery_variance_days
+        description: >-
+          Delivery variance in days vs expected delivery date.
+          Positive = late, negative = early, null = no expected delivery date set.
+
+      - name: dw_load_datetime
+        description: "Watermark timestamp when the row was loaded; used for incremental processing"
+        data_tests:
+          - not_null
+          - dbt_utils.recency:
+              datepart: day
+              field: dw_load_datetime
+              interval: 1
+
+      - name: _dbt_run_id
+        description: "dbt invocation ID for lineage tracking"
+
+    unit_tests:
+      - name: test_happy_path_all_dims_matched
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S1, GRID: 8, POID: 8019, ReceivedByID: 10017, ReceiptDate: "2024-03-20", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-03-20T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 1, GRID: 8, POLineID: 8020, QuantityReceived: 10.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8019, PONumber: TST-PO-S1, RequisitionID: null, VendorID: 10041, OrderedByID: 302, ApprovedByID: null, CostCenterID: 100, PODate: "2024-03-01", ExpectedDelivery: "2024-03-15", POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 500.0, Notes: null, CreatedAt: "2024-03-01T08:00:00", UpdatedAt: "2024-03-20T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8020, POID: 8019, LineNumber: 1, RequisitionLineID: null, ItemID: 3041, Quantity: 10.0, AgreedUnitPrice: 50.0, QuantityReceived: 10.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10041, VendorCode: TST-VND-S1, VendorName: Acme Supplies Ltd, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3041, ItemCode: TST-ITM-S1, ItemName: Server Rack Unit, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2022-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10017, EmployeeCode: TST-EMP-S1, FullName: John Receiver, Email: jreceiver@test.com, Department: Warehouse, JobTitle: Goods Receiver, ManagerID: null, IsActive: 1, CreatedAt: "2022-06-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows:
+              - {Date_SK: 20240320, FullDate: "2024-03-20", DayName: Wednesday, DayOfWeek: 4, DayOfMonth: 20, DayOfYear: 80, WeekOfYear: 12, MonthNumber: 3, MonthName: March, MonthShort: Mar, CalendarQuarter: 1, CalendarQuarterName: Q1, CalendarYear: 2024, CalendarYearMonth: 202403, FiscalYear: 2024, FiscalQuarter: 1, FiscalMonth: 3, IsWeekend: 0, IsHoliday: 0, HolidayName: null}
+              - {Date_SK: 20240315, FullDate: "2024-03-15", DayName: Friday, DayOfWeek: 6, DayOfMonth: 15, DayOfYear: 75, WeekOfYear: 11, MonthNumber: 3, MonthName: March, MonthShort: Mar, CalendarQuarter: 1, CalendarQuarterName: Q1, CalendarYear: 2024, CalendarYearMonth: 202403, FiscalYear: 2024, FiscalQuarter: 1, FiscalMonth: 3, IsWeekend: 0, IsHoliday: 0, HolidayName: null}
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 132, Vendor_BK: TST-VND-S1, VendorName: Acme Supplies Ltd, ContactName: Jane Contact, City: Dallas, Country: United States, TaxID: 12-3456789, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-01-01T00:00:00", DW_UpdateDate: "2023-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 73, Product_BK: TST-ITM-S1, ProductName: Server Rack Unit, Description: Standard rack unit, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2022-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 104, Employee_BK: TST-EMP-S1, FullName: John Receiver, Email: jreceiver@test.com, Department: Warehouse, JobTitle: Goods Receiver, IsActive: 1, EffectiveStart: "2022-06-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-06-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 1, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Dallas, StateProvince: TX, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S1, PO_BK: TST-PO-S1, ReceiptDate_SK: 20240320, ExpectedDelivery_SK: 20240315, Vendor_SK: 132, Product_SK: 73, Location_SK: 1, ReceivedBy_Employee_SK: 104, GR_Status: Posted, Quantity_Ordered: "10.000", Quantity_This_Receipt: "10.000", Cumulative_Qty_Received: "10.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 19, Delivery_Variance_Days: 5}
+
+      - name: test_no_expected_delivery_variance_null
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S2, GRID: 9, POID: 8020, ReceivedByID: 10018, ReceiptDate: "2024-04-10", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-04-10T10:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 2, GRID: 9, POLineID: 8021, QuantityReceived: 5.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8020, PONumber: TST-PO-S2, RequisitionID: null, VendorID: 10042, OrderedByID: 303, ApprovedByID: null, CostCenterID: 101, PODate: "2024-03-25", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 250.0, Notes: null, CreatedAt: "2024-03-25T08:00:00", UpdatedAt: "2024-04-10T10:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8021, POID: 8020, LineNumber: 1, RequisitionLineID: null, ItemID: 3042, Quantity: 5.0, AgreedUnitPrice: 50.0, QuantityReceived: 5.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10042, VendorCode: TST-VND-S2, VendorName: Beta Corp, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: Canada, TaxID: null, PaymentTerms: NET15, VendorStatus: Active, CreatedAt: "2023-02-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3042, ItemCode: TST-ITM-S2, ItemName: Office Chair, Description: null, UnitOfMeasure: EA, ItemCategory: Office, AccountingType: Indirect, GLAccount: null, IsActive: 1, CreatedAt: "2022-03-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10018, EmployeeCode: TST-EMP-S2, FullName: Mary Stocker, Email: mstocker@test.com, Department: Operations, JobTitle: Store Keeper, ManagerID: null, IsActive: 1, CreatedAt: "2021-09-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 133, Vendor_BK: TST-VND-S2, VendorName: Beta Corp, ContactName: Bob Contact, City: Toronto, Country: Canada, TaxID: CA-9876543, PaymentTerms: NET15, VendorStatus: Active, EffectiveStart: "2023-02-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-02-01T00:00:00", DW_UpdateDate: "2023-02-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 74, Product_BK: TST-ITM-S2, ProductName: Office Chair, Description: Ergonomic chair, UnitOfMeasure: EA, Category: Office, AccountingType: Indirect, GLAccount: "00000", EffectiveStart: "2022-03-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-03-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 105, Employee_BK: TST-EMP-S2, FullName: Mary Stocker, Email: mstocker@test.com, Department: Operations, JobTitle: Store Keeper, IsActive: 1, EffectiveStart: "2021-09-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2021-09-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 2, Location_BK: WH-SUPP-03, LocationName: Supply Warehouse, LocationType: Warehouse, AddressLine1: null, City: Toronto, StateProvince: null, Country: Canada, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S2, PO_BK: TST-PO-S2, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 133, Product_SK: 74, Location_SK: 2, ReceivedBy_Employee_SK: 105, GR_Status: Posted, Quantity_Ordered: "5.000", Quantity_This_Receipt: "5.000", Cumulative_Qty_Received: "5.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 16, Delivery_Variance_Days: null}
+
+      - name: test_two_receipts_same_poline_cumulative
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S3A, GRID: 10, POID: 8021, ReceivedByID: 10019, ReceiptDate: "2024-05-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-05-01T09:00:00"}
+              - {GRNumber: TST-GR-S3B, GRID: 11, POID: 8021, ReceivedByID: 10019, ReceiptDate: "2024-05-10", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-05-10T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 3, GRID: 10, POLineID: 8022, QuantityReceived: 4.0, Notes: null}
+              - {GRLineID: 4, GRID: 11, POLineID: 8022, QuantityReceived: 6.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8021, PONumber: TST-PO-S3, RequisitionID: null, VendorID: 10043, OrderedByID: 304, ApprovedByID: null, CostCenterID: 102, PODate: "2024-04-15", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 1000.0, Notes: null, CreatedAt: "2024-04-15T08:00:00", UpdatedAt: "2024-05-10T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8022, POID: 8021, LineNumber: 1, RequisitionLineID: null, ItemID: 3043, Quantity: 10.0, AgreedUnitPrice: 100.0, QuantityReceived: 10.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10043, VendorCode: TST-VND-S3, VendorName: Gamma Tech, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United Kingdom, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-03-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3043, ItemCode: TST-ITM-S3, ItemName: Network Cable, Description: null, UnitOfMeasure: M, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2022-05-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10019, EmployeeCode: TST-EMP-S3, FullName: Sam Checker, Email: schecker@test.com, Department: Warehouse, JobTitle: Receiving Clerk, ManagerID: null, IsActive: 1, CreatedAt: "2020-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 134, Vendor_BK: TST-VND-S3, VendorName: Gamma Tech, ContactName: Gamma Contact, City: London, Country: United Kingdom, TaxID: UK-1122334, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-03-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-03-01T00:00:00", DW_UpdateDate: "2023-03-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 75, Product_BK: TST-ITM-S3, ProductName: Network Cable, Description: Standard network cable, UnitOfMeasure: M, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2022-05-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-05-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 106, Employee_BK: TST-EMP-S3, FullName: Sam Checker, Email: schecker@test.com, Department: Warehouse, JobTitle: Receiving Clerk, IsActive: 1, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 3, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: London, StateProvince: null, Country: United Kingdom, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S3A, PO_BK: TST-PO-S3, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 134, Product_SK: 75, Location_SK: 3, ReceivedBy_Employee_SK: 106, GR_Status: Posted, Quantity_Ordered: "10.000", Quantity_This_Receipt: "4.000", Cumulative_Qty_Received: "4.000", Quantity_Outstanding: "6.000", Receipt_Completeness_Pct: "40.00", Lead_Time_Days: 16, Delivery_Variance_Days: null}
+            - {GR_BK: TST-GR-S3B, PO_BK: TST-PO-S3, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 134, Product_SK: 75, Location_SK: 3, ReceivedBy_Employee_SK: 106, GR_Status: Posted, Quantity_Ordered: "10.000", Quantity_This_Receipt: "6.000", Cumulative_Qty_Received: "10.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 25, Delivery_Variance_Days: null}
+
+      - name: test_location_office_item
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S4, GRID: 12, POID: 8022, ReceivedByID: 10020, ReceiptDate: "2024-06-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-06-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 5, GRID: 12, POLineID: 8023, QuantityReceived: 3.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8022, PONumber: TST-PO-S4, RequisitionID: null, VendorID: 10044, OrderedByID: 305, ApprovedByID: null, CostCenterID: 103, PODate: "2024-05-20", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 150.0, Notes: null, CreatedAt: "2024-05-20T08:00:00", UpdatedAt: "2024-06-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8023, POID: 8022, LineNumber: 1, RequisitionLineID: null, ItemID: 3044, Quantity: 3.0, AgreedUnitPrice: 50.0, QuantityReceived: 3.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10044, VendorCode: TST-VND-S4, VendorName: Office Plus, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-04-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3044, ItemCode: TST-ITM-S4, ItemName: Printer Paper, Description: null, UnitOfMeasure: BOX, ItemCategory: Office, AccountingType: Indirect, GLAccount: null, IsActive: 1, CreatedAt: "2022-07-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10020, EmployeeCode: TST-EMP-S4, FullName: Lisa Intake, Email: lintake@test.com, Department: Admin, JobTitle: Admin Clerk, ManagerID: null, IsActive: 1, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 135, Vendor_BK: TST-VND-S4, VendorName: Office Plus, ContactName: Plus Contact, City: Chicago, Country: United States, TaxID: 99-1234567, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-04-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-04-01T00:00:00", DW_UpdateDate: "2023-04-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 76, Product_BK: TST-ITM-S4, ProductName: Printer Paper, Description: A4 paper box, UnitOfMeasure: BOX, Category: Office, AccountingType: Indirect, GLAccount: "00000", EffectiveStart: "2022-07-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-07-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 107, Employee_BK: TST-EMP-S4, FullName: Lisa Intake, Email: lintake@test.com, Department: Admin, JobTitle: Admin Clerk, IsActive: 1, EffectiveStart: "2023-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 4, Location_BK: WH-SUPP-03, LocationName: Supply Warehouse, LocationType: Warehouse, AddressLine1: null, City: Chicago, StateProvince: IL, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S4, PO_BK: TST-PO-S4, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 135, Product_SK: 76, Location_SK: 4, ReceivedBy_Employee_SK: 107, GR_Status: Posted, Quantity_Ordered: "3.000", Quantity_This_Receipt: "3.000", Cumulative_Qty_Received: "3.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 12, Delivery_Variance_Days: null}
+
+      - name: test_location_hardware_switch
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S5, GRID: 13, POID: 8023, ReceivedByID: 10021, ReceiptDate: "2024-07-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-07-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 6, GRID: 13, POLineID: 8024, QuantityReceived: 2.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8023, PONumber: TST-PO-S5, RequisitionID: null, VendorID: 10045, OrderedByID: 306, ApprovedByID: null, CostCenterID: 104, PODate: "2024-06-15", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 600.0, Notes: null, CreatedAt: "2024-06-15T08:00:00", UpdatedAt: "2024-07-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8024, POID: 8023, LineNumber: 1, RequisitionLineID: null, ItemID: 3045, Quantity: 2.0, AgreedUnitPrice: 300.0, QuantityReceived: 2.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10045, VendorCode: TST-VND-S5, VendorName: NetEquip Ltd, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-05-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3045, ItemCode: TST-SWITCH-S5, ItemName: "Network Switch 24Port", Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2022-09-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10021, EmployeeCode: TST-EMP-S5, FullName: Tom Netops, Email: tnetops@test.com, Department: IT, JobTitle: Network Technician, ManagerID: null, IsActive: 1, CreatedAt: "2021-06-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 136, Vendor_BK: TST-VND-S5, VendorName: NetEquip Ltd, ContactName: Net Contact, City: Seattle, Country: United States, TaxID: 55-1234567, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-05-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-05-01T00:00:00", DW_UpdateDate: "2023-05-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 77, Product_BK: TST-SWITCH-S5, ProductName: "Network Switch 24Port", Description: 24-port managed switch, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2022-09-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-09-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 108, Employee_BK: TST-EMP-S5, FullName: Tom Netops, Email: tnetops@test.com, Department: IT, JobTitle: Network Technician, IsActive: 1, EffectiveStart: "2021-06-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2021-06-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 5, Location_BK: WH-NET-04, LocationName: Network Equipment Warehouse, LocationType: Warehouse, AddressLine1: null, City: Seattle, StateProvince: WA, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S5, PO_BK: TST-PO-S5, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 136, Product_SK: 77, Location_SK: 5, ReceivedBy_Employee_SK: 108, GR_Status: Posted, Quantity_Ordered: "2.000", Quantity_This_Receipt: "2.000", Cumulative_Qty_Received: "2.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 16, Delivery_Variance_Days: null}
+
+      - name: test_location_else_corp
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S6, GRID: 14, POID: 8024, ReceivedByID: 10022, ReceiptDate: "2024-08-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-08-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 7, GRID: 14, POLineID: 8025, QuantityReceived: 1.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8024, PONumber: TST-PO-S6, RequisitionID: null, VendorID: 10046, OrderedByID: 307, ApprovedByID: null, CostCenterID: 105, PODate: "2024-07-20", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 200.0, Notes: null, CreatedAt: "2024-07-20T08:00:00", UpdatedAt: "2024-08-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8025, POID: 8024, LineNumber: 1, RequisitionLineID: null, ItemID: 3046, Quantity: 1.0, AgreedUnitPrice: 200.0, QuantityReceived: 1.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10046, VendorCode: TST-VND-S6, VendorName: Services Inc, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-06-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3046, ItemCode: TST-ITM-S6, ItemName: Consulting License, Description: null, UnitOfMeasure: EA, ItemCategory: Services, AccountingType: Indirect, GLAccount: null, IsActive: 1, CreatedAt: "2022-10-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10022, EmployeeCode: TST-EMP-S6, FullName: Alice Manager, Email: amanager@test.com, Department: Procurement, JobTitle: Procurement Manager, ManagerID: null, IsActive: 1, CreatedAt: "2019-03-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 137, Vendor_BK: TST-VND-S6, VendorName: Services Inc, ContactName: Svc Contact, City: New York, Country: United States, TaxID: 77-7654321, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-06-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-06-01T00:00:00", DW_UpdateDate: "2023-06-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 78, Product_BK: TST-ITM-S6, ProductName: Consulting License, Description: Annual consulting license, UnitOfMeasure: EA, Category: Services, AccountingType: Indirect, GLAccount: "00000", EffectiveStart: "2022-10-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-10-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 109, Employee_BK: TST-EMP-S6, FullName: Alice Manager, Email: amanager@test.com, Department: Procurement, JobTitle: Procurement Manager, IsActive: 1, EffectiveStart: "2019-03-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2019-03-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 6, Location_BK: WH-CORP-01, LocationName: Corporate Warehouse, LocationType: Warehouse, AddressLine1: null, City: New York, StateProvince: NY, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S6, PO_BK: TST-PO-S6, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 137, Product_SK: 78, Location_SK: 6, ReceivedBy_Employee_SK: 109, GR_Status: Posted, Quantity_Ordered: "1.000", Quantity_This_Receipt: "1.000", Cumulative_Qty_Received: "1.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 12, Delivery_Variance_Days: null}
+
+      - name: test_vendor_not_in_dim_vendor
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S7, GRID: 15, POID: 8025, ReceivedByID: 10023, ReceiptDate: "2024-09-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-09-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 8, GRID: 15, POLineID: 8026, QuantityReceived: 5.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8025, PONumber: TST-PO-S7, RequisitionID: null, VendorID: 99999, OrderedByID: 308, ApprovedByID: null, CostCenterID: 106, PODate: "2024-08-15", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 100.0, Notes: null, CreatedAt: "2024-08-15T08:00:00", UpdatedAt: "2024-09-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8026, POID: 8025, LineNumber: 1, RequisitionLineID: null, ItemID: 3047, Quantity: 5.0, AgreedUnitPrice: 20.0, QuantityReceived: 5.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 99999, VendorCode: TST-VND-S7-MISSING, VendorName: Unknown Vendor, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: null, TaxID: null, PaymentTerms: null, VendorStatus: Active, CreatedAt: "2023-07-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3047, ItemCode: TST-ITM-S7, ItemName: Generic Part, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2022-11-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10023, EmployeeCode: TST-EMP-S7, FullName: Bob Clerk, Email: bclerk@test.com, Department: Warehouse, JobTitle: Clerk, ManagerID: null, IsActive: 1, CreatedAt: "2021-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 79, Product_BK: TST-ITM-S7, ProductName: Generic Part, Description: null, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2022-11-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-11-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 110, Employee_BK: TST-EMP-S7, FullName: Bob Clerk, Email: bclerk@test.com, Department: Warehouse, JobTitle: Clerk, IsActive: 1, EffectiveStart: "2021-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2021-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 7, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Austin, StateProvince: TX, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S7, PO_BK: TST-PO-S7, Vendor_SK: -1, Product_SK: 79, Location_SK: 7, ReceivedBy_Employee_SK: 110, GR_Status: Posted, Quantity_Ordered: "5.000", Quantity_This_Receipt: "5.000", Cumulative_Qty_Received: "5.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00"}
+
+      - name: test_vendor_dim_iscurrent_zero_miss
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S8, GRID: 16, POID: 8026, ReceivedByID: 10024, ReceiptDate: "2024-10-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-10-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 9, GRID: 16, POLineID: 8027, QuantityReceived: 3.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8026, PONumber: TST-PO-S8, RequisitionID: null, VendorID: 10047, OrderedByID: 309, ApprovedByID: null, CostCenterID: 107, PODate: "2024-09-20", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 75.0, Notes: null, CreatedAt: "2024-09-20T08:00:00", UpdatedAt: "2024-10-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8027, POID: 8026, LineNumber: 1, RequisitionLineID: null, ItemID: 3048, Quantity: 3.0, AgreedUnitPrice: 25.0, QuantityReceived: 3.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10047, VendorCode: TST-VND-S8, VendorName: Old Vendor, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: null, TaxID: null, PaymentTerms: null, VendorStatus: Active, CreatedAt: "2020-01-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3048, ItemCode: TST-ITM-S8, ItemName: Old Part, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2020-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10024, EmployeeCode: TST-EMP-S8, FullName: Carl Checker, Email: cchecker@test.com, Department: Warehouse, JobTitle: Checker, ManagerID: null, IsActive: 1, CreatedAt: "2020-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 200, Vendor_BK: TST-VND-S8, VendorName: Old Vendor, ContactName: null, City: null, Country: null, TaxID: null, PaymentTerms: null, VendorStatus: Inactive, EffectiveStart: "2020-01-01", EffectiveEnd: "2023-12-31", IsCurrent: 0, DW_InsertDate: "2020-01-01T00:00:00", DW_UpdateDate: "2024-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 80, Product_BK: TST-ITM-S8, ProductName: Old Part, Description: null, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 111, Employee_BK: TST-EMP-S8, FullName: Carl Checker, Email: cchecker@test.com, Department: Warehouse, JobTitle: Checker, IsActive: 1, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 8, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Portland, StateProvince: OR, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S8, PO_BK: TST-PO-S8, Vendor_SK: -1, Product_SK: 80, Location_SK: 8, ReceivedBy_Employee_SK: 111, GR_Status: Posted, Quantity_Ordered: "3.000", Quantity_This_Receipt: "3.000", Cumulative_Qty_Received: "3.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00"}
+
+      - name: test_product_not_in_dim_product
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S9, GRID: 17, POID: 8027, ReceivedByID: 10025, ReceiptDate: "2024-11-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-11-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 10, GRID: 17, POLineID: 8028, QuantityReceived: 2.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8027, PONumber: TST-PO-S9, RequisitionID: null, VendorID: 10048, OrderedByID: 310, ApprovedByID: null, CostCenterID: 108, PODate: "2024-10-15", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 50.0, Notes: null, CreatedAt: "2024-10-15T08:00:00", UpdatedAt: "2024-11-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8028, POID: 8027, LineNumber: 1, RequisitionLineID: null, ItemID: 3049, Quantity: 2.0, AgreedUnitPrice: 25.0, QuantityReceived: 2.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10048, VendorCode: TST-VND-S9, VendorName: New Vendor, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2024-01-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3049, ItemCode: TST-ITM-S9-MISSING, ItemName: New Item Not In DW, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2024-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10025, EmployeeCode: TST-EMP-S9, FullName: Dave Dock, Email: ddock@test.com, Department: Warehouse, JobTitle: Dock Worker, ManagerID: null, IsActive: 1, CreatedAt: "2021-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 140, Vendor_BK: TST-VND-S9, VendorName: New Vendor, ContactName: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2024-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2024-01-01T00:00:00", DW_UpdateDate: "2024-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows: []
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 112, Employee_BK: TST-EMP-S9, FullName: Dave Dock, Email: ddock@test.com, Department: Warehouse, JobTitle: Dock Worker, IsActive: 1, EffectiveStart: "2021-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2021-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 9, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Denver, StateProvince: CO, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S9, PO_BK: TST-PO-S9, Vendor_SK: 140, Product_SK: -1, Location_SK: 9, ReceivedBy_Employee_SK: 112, GR_Status: Posted, Quantity_Ordered: "2.000", Quantity_This_Receipt: "2.000", Cumulative_Qty_Received: "2.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00"}
+
+      - name: test_employee_dim_iscurrent_zero_miss
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S10, GRID: 18, POID: 8028, ReceivedByID: 10026, ReceiptDate: "2024-11-15", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-11-15T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 11, GRID: 18, POLineID: 8029, QuantityReceived: 4.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8028, PONumber: TST-PO-S10, RequisitionID: null, VendorID: 10049, OrderedByID: 311, ApprovedByID: null, CostCenterID: 109, PODate: "2024-11-01", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 80.0, Notes: null, CreatedAt: "2024-11-01T08:00:00", UpdatedAt: "2024-11-15T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8029, POID: 8028, LineNumber: 1, RequisitionLineID: null, ItemID: 3050, Quantity: 4.0, AgreedUnitPrice: 20.0, QuantityReceived: 4.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10049, VendorCode: TST-VND-S10, VendorName: Parts Co, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-08-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3050, ItemCode: TST-ITM-S10, ItemName: Spare Part, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10026, EmployeeCode: TST-EMP-S10-OLD, FullName: Former Employee, Email: former@test.com, Department: Warehouse, JobTitle: Former Worker, ManagerID: null, IsActive: 0, CreatedAt: "2018-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 141, Vendor_BK: TST-VND-S10, VendorName: Parts Co, ContactName: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-08-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-08-01T00:00:00", DW_UpdateDate: "2023-08-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 81, Product_BK: TST-ITM-S10, ProductName: Spare Part, Description: null, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2023-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 300, Employee_BK: TST-EMP-S10-OLD, FullName: Former Employee, Email: former@test.com, Department: Warehouse, JobTitle: Former Worker, IsActive: 0, EffectiveStart: "2018-01-01", EffectiveEnd: "2023-06-30", IsCurrent: 0, DW_InsertDate: "2018-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 10, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Phoenix, StateProvince: AZ, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S10, PO_BK: TST-PO-S10, Vendor_SK: 141, Product_SK: 81, Location_SK: 10, ReceivedBy_Employee_SK: -1, GR_Status: Posted, Quantity_Ordered: "4.000", Quantity_This_Receipt: "4.000", Cumulative_Qty_Received: "4.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00"}
+
+      - name: test_receipt_date_not_in_dim_date
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-S11, GRID: 19, POID: 8029, ReceivedByID: 10027, ReceiptDate: "2024-12-01", GRStatus: Posted, DeliveryNote: null, Notes: null, CreatedAt: "2024-12-01T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 12, GRID: 19, POLineID: 8030, QuantityReceived: 1.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8029, PONumber: TST-PO-S11, RequisitionID: null, VendorID: 10050, OrderedByID: 312, ApprovedByID: null, CostCenterID: 110, PODate: "2024-11-20", ExpectedDelivery: "2024-11-30", POStatus: Received, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 200.0, Notes: null, CreatedAt: "2024-11-20T08:00:00", UpdatedAt: "2024-12-01T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8030, POID: 8029, LineNumber: 1, RequisitionLineID: null, ItemID: 3051, Quantity: 1.0, AgreedUnitPrice: 200.0, QuantityReceived: 1.0, QuantityInvoiced: 0.0, LineStatus: Received, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10050, VendorCode: TST-VND-S11, VendorName: Missing Date Vendor, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3051, ItemCode: TST-ITM-S11, ItemName: Date Test Item, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10027, EmployeeCode: TST-EMP-S11, FullName: Eve Worker, Email: eworker@test.com, Department: Warehouse, JobTitle: Worker, ManagerID: null, IsActive: 1, CreatedAt: "2022-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows:
+              - {Vendor_SK: 142, Vendor_BK: TST-VND-S11, VendorName: Missing Date Vendor, ContactName: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, EffectiveStart: "2023-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-01-01T00:00:00", DW_UpdateDate: "2023-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Product')
+            rows:
+              - {Product_SK: 82, Product_BK: TST-ITM-S11, ProductName: Date Test Item, Description: null, UnitOfMeasure: EA, Category: Hardware, AccountingType: Direct, GLAccount: "00000", EffectiveStart: "2023-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2023-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'Dim_Employee')
+            rows:
+              - {Employee_SK: 113, Employee_BK: TST-EMP-S11, FullName: Eve Worker, Email: eworker@test.com, Department: Warehouse, JobTitle: Worker, IsActive: 1, EffectiveStart: "2022-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2022-01-01T00:00:00", SourceRowHash: null}
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 11, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, AddressLine1: null, City: Miami, StateProvince: FL, Country: United States, EffectiveStart: "2020-01-01", EffectiveEnd: "9999-12-31", IsCurrent: 1, DW_InsertDate: "2020-01-01T00:00:00"}
+        expect:
+          rows:
+            - {GR_BK: TST-GR-S11, PO_BK: TST-PO-S11, ReceiptDate_SK: 0, ExpectedDelivery_SK: 0, Vendor_SK: 142, Product_SK: 82, Location_SK: 11, ReceivedBy_Employee_SK: 113, GR_Status: Posted, Quantity_Ordered: "1.000", Quantity_This_Receipt: "1.000", Cumulative_Qty_Received: "1.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00", Lead_Time_Days: 11, Delivery_Variance_Days: 1}
+
+      - name: test_gr_status_non_posted_excluded
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: TST-GR-CANC, GRID: 20, POID: 8030, ReceivedByID: 10028, ReceiptDate: "2024-12-10", GRStatus: Cancelled, DeliveryNote: null, Notes: null, CreatedAt: "2024-12-10T09:00:00"}
+              - {GRNumber: TST-GR-PEND, GRID: 21, POID: 8031, ReceivedByID: 10028, ReceiptDate: "2024-12-11", GRStatus: Pending, DeliveryNote: null, Notes: null, CreatedAt: "2024-12-11T09:00:00"}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 13, GRID: 20, POLineID: 8031, QuantityReceived: 5.0, Notes: null}
+              - {GRLineID: 14, GRID: 21, POLineID: 8032, QuantityReceived: 3.0, Notes: null}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 8030, PONumber: TST-PO-CANC, RequisitionID: null, VendorID: 10051, OrderedByID: 313, ApprovedByID: null, CostCenterID: 111, PODate: "2024-12-01", ExpectedDelivery: null, POStatus: Cancelled, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 100.0, Notes: null, CreatedAt: "2024-12-01T08:00:00", UpdatedAt: "2024-12-10T09:00:00"}
+              - {POID: 8031, PONumber: TST-PO-PEND, RequisitionID: null, VendorID: 10051, OrderedByID: 313, ApprovedByID: null, CostCenterID: 111, PODate: "2024-12-05", ExpectedDelivery: null, POStatus: Open, PaymentTerms: NET30, ShippingAddress: null, TotalAmount: 50.0, Notes: null, CreatedAt: "2024-12-05T08:00:00", UpdatedAt: "2024-12-11T09:00:00"}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 8031, POID: 8030, LineNumber: 1, RequisitionLineID: null, ItemID: 3052, Quantity: 5.0, AgreedUnitPrice: 20.0, QuantityReceived: 0.0, QuantityInvoiced: 0.0, LineStatus: Open, Notes: null}
+              - {POLineID: 8032, POID: 8031, LineNumber: 1, RequisitionLineID: null, ItemID: 3053, Quantity: 3.0, AgreedUnitPrice: 16.0, QuantityReceived: 0.0, QuantityInvoiced: 0.0, LineStatus: Open, Notes: null}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 10051, VendorCode: TST-VND-S12, VendorName: Test Vendor 12, ContactName: null, Email: null, Phone: null, Address: null, City: null, Country: United States, TaxID: null, PaymentTerms: NET30, VendorStatus: Active, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 3052, ItemCode: TST-ITM-S12, ItemName: Part A, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2023-01-01T00:00:00"}
+              - {ItemID: 3053, ItemCode: TST-ITM-S13, ItemName: Part B, Description: null, UnitOfMeasure: EA, ItemCategory: Hardware, AccountingType: Direct, GLAccount: null, IsActive: 1, CreatedAt: "2023-01-01T00:00:00"}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 10028, EmployeeCode: TST-EMP-S12, FullName: Frank Admin, Email: fadmin@test.com, Department: Warehouse, JobTitle: Admin, ManagerID: null, IsActive: 1, CreatedAt: "2022-01-01T00:00:00"}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+          - input: source('dbo', 'Dim_Product')
+            rows: []
+          - input: source('dbo', 'Dim_Employee')
+            rows: []
+          - input: source('dbo', 'dim_location')
+            rows: []
+        expect:
+          rows: []
+
+      - name: test_empty_source_no_rows_inserted
+        model: stg_fact_inventory_receipt
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows: []
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows: []
+          - input: source('purchasing', 'PurchaseOrders')
+            rows: []
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows: []
+          - input: source('master', 'Vendors')
+            rows: []
+          - input: source('master', 'Items')
+            rows: []
+          - input: source('master', 'Employees')
+            rows: []
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+          - input: source('dbo', 'Dim_Product')
+            rows: []
+          - input: source('dbo', 'Dim_Employee')
+            rows: []
+          - input: source('dbo', 'dim_location')
+            rows: []
+        expect:
+          rows: []
+
+      - name: test_gap_non_posted_receipt_excluded_from_running_total
+        model: stg_fact_inventory_receipt
+        description: >-
+          Cancelled GR lines must not contribute to the running total window function.
+          The WHERE gr.GRStatus = 'Posted' in gr_running_total ensures only posted
+          receipts enter the cumulative sum.
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: GAP-GR-01, GRID: 50, POID: 9000, ReceivedByID: 1000, ReceiptDate: "2024-01-10", GRStatus: Cancelled}
+              - {GRNumber: GAP-GR-02, GRID: 51, POID: 9001, ReceivedByID: 1000, ReceiptDate: "2024-01-15", GRStatus: Posted}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 100, GRID: 50, POLineID: 9000, QuantityReceived: 10.0}
+              - {GRLineID: 101, GRID: 51, POLineID: 9001, QuantityReceived: 5.0}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 9001, PONumber: GAP-PO-01, VendorID: 1, OrderedByID: 1, PODate: "2024-01-01", ExpectedDelivery: null, POStatus: Received, PaymentTerms: NET30, TotalAmount: 250.0}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 9001, POID: 9001, LineNumber: 1, ItemID: 4000, Quantity: 5.0, AgreedUnitPrice: 50.0, QuantityReceived: 5.0, QuantityInvoiced: 0.0, LineStatus: Received}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 1, VendorCode: GAP-VND-01, VendorName: Gap Vendor, VendorStatus: Active}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 4000, ItemCode: GAP-ITM-01, ItemName: Gap Item, ItemCategory: Hardware, AccountingType: Direct}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 1000, EmployeeCode: GAP-EMP-01, FullName: Gap Employee, Department: Warehouse, JobTitle: Worker, IsActive: 1}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+          - input: source('dbo', 'Dim_Product')
+            rows: []
+          - input: source('dbo', 'Dim_Employee')
+            rows: []
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 99, Location_BK: WH-IT-02, LocationName: IT Warehouse, LocationType: Warehouse, IsCurrent: 1}
+        expect:
+          rows:
+            - {GR_BK: GAP-GR-02, PO_BK: GAP-PO-01, Vendor_SK: -1, Product_SK: -1, Location_SK: 99, Quantity_Ordered: "5.000", Quantity_This_Receipt: "5.000", Cumulative_Qty_Received: "5.000", Quantity_Outstanding: "0.000", Receipt_Completeness_Pct: "100.00"}
+
+      - name: test_gap_delivery_variance_positive_late
+        model: stg_fact_inventory_receipt
+        description: >-
+          When receipt date is after the expected delivery date, delivery_variance_days
+          is positive (late delivery).
+        given:
+          - input: source('purchasing', 'GoodsReceipts')
+            rows:
+              - {GRNumber: GAP-GR-LATE, GRID: 60, POID: 9010, ReceivedByID: 2000, ReceiptDate: "2024-06-20", GRStatus: Posted}
+          - input: source('purchasing', 'GoodsReceiptLines')
+            rows:
+              - {GRLineID: 200, GRID: 60, POLineID: 9010, QuantityReceived: 10.0}
+          - input: source('purchasing', 'PurchaseOrders')
+            rows:
+              - {POID: 9010, PONumber: GAP-PO-LATE, VendorID: 2, OrderedByID: 2, PODate: "2024-06-01", ExpectedDelivery: "2024-06-10", POStatus: Received, PaymentTerms: NET30, TotalAmount: 500.0}
+          - input: source('purchasing', 'PurchaseOrderLines')
+            rows:
+              - {POLineID: 9010, POID: 9010, LineNumber: 1, ItemID: 5000, Quantity: 10.0, AgreedUnitPrice: 50.0, QuantityReceived: 10.0, QuantityInvoiced: 0.0, LineStatus: Received}
+          - input: source('master', 'Vendors')
+            rows:
+              - {VendorID: 2, VendorCode: GAP-VND-02, VendorName: Late Vendor, VendorStatus: Active}
+          - input: source('master', 'Items')
+            rows:
+              - {ItemID: 5000, ItemCode: GAP-ITM-02, ItemName: Late Item, ItemCategory: Office, AccountingType: Indirect}
+          - input: source('master', 'Employees')
+            rows:
+              - {EmployeeID: 2000, EmployeeCode: GAP-EMP-02, FullName: Late Employee, Department: Warehouse, JobTitle: Worker, IsActive: 1}
+          - input: source('dbo', 'dim_date')
+            rows: []
+          - input: source('dbo', 'Dim_Vendor')
+            rows: []
+          - input: source('dbo', 'Dim_Product')
+            rows: []
+          - input: source('dbo', 'Dim_Employee')
+            rows: []
+          - input: source('dbo', 'dim_location')
+            rows:
+              - {Location_SK: 98, Location_BK: WH-SUPP-03, LocationName: Supply Warehouse, LocationType: Warehouse, IsCurrent: 1}
+        expect:
+          rows:
+            - {GR_BK: GAP-GR-LATE, Lead_Time_Days: 19, Delivery_Variance_Days: 10}
