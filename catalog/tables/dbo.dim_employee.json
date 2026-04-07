@@ -264,5 +264,49 @@
     "status": "resolved",
     "selected_writer": "etl.usp_load_dim_employee",
     "selected_writer_rationale": "etl.usp_load_dim_employee is the sole direct writer to dbo.Dim_Employee, implementing SCD Type 2 via a two-phase UPDATE+INSERT pattern using SHA2_256 hash change detection. All other procedures referencing Dim_Employee (usp_load_fact_inventory_receipt, usp_load_fact_po, usp_load_fact_requisition) are read-only consumers joining on Employee_BK/IsCurrent."
+  },
+  "profile": {
+    "status": "ok",
+    "writer": "etl.usp_load_dim_employee",
+    "classification": {
+      "resolved_kind": "dim_scd2",
+      "source": "llm",
+      "rationale": "The writer proc follows the classic SCD2 expire-and-insert pattern: Phase 1 expires changed rows by setting EffectiveEnd and IsCurrent=0, Phase 2 inserts new history rows with EffectiveStart/EffectiveEnd/IsCurrent=1. Column shape (EffectiveStart, EffectiveEnd, IsCurrent) confirms dim_scd2."
+    },
+    "primary_key": {
+      "columns": [
+        "Employee_SK"
+      ],
+      "primary_key_type": "surrogate",
+      "source": "catalog",
+      "rationale": "Catalog declares PK_Dim_Employee on Employee_SK, which is an INT IDENTITY column — a definitive surrogate key per catalog auto_increment_columns."
+    },
+    "natural_key": {
+      "columns": [
+        "Employee_BK"
+      ],
+      "source": "catalog+llm",
+      "rationale": "Employee_SK is confirmed surrogate via catalog identity signal; Employee_BK (VARCHAR(20), mapped from src.EmployeeCode) is the business key used in both the expire UPDATE and the NOT EXISTS insert guard in the proc body."
+    },
+    "watermark": {
+      "column": "DW_InsertDate",
+      "source": "llm",
+      "rationale": "No WHERE-clause watermark filter exists in the proc; DW_InsertDate (DATETIME2) is set via SYSUTCDATETIME() on each insert and is the best available datetime watermark for dbt incremental strategy on newly inserted SCD2 rows."
+    },
+    "foreign_keys": [],
+    "pii_actions": [
+      {
+        "column": "FullName",
+        "suggested_action": "mask",
+        "source": "llm",
+        "rationale": "FullName matches the full_name PII column name pattern and contains personally identifiable employee data."
+      },
+      {
+        "column": "Email",
+        "suggested_action": "mask",
+        "source": "llm",
+        "rationale": "Email matches the email PII column name pattern and contains personally identifiable employee contact data."
+      }
+    ]
   }
 }
