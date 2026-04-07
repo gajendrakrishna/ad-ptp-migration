@@ -1,0 +1,3053 @@
+unit_tests:
+- name: test_happy_path_all_dims_matched
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S01
+      InternalInvoiceRef: TST-AP-S01
+      VendorID: 2029
+      POID: 7
+      InvoiceDate: '2024-03-01'
+      ReceivedDate: '2024-03-05'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 500.0
+      TotalApprovedAmount: 500.0
+      Notes: null
+      CreatedAt: '2024-03-01T08:00:00'
+      UpdatedAt: '2024-03-05T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 5
+      LineNumber: 1
+      POLineID: 8
+      ItemID: 3029
+      QuantityBilled: 10.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 7
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3029
+      Quantity: 10.0
+      AgreedUnitPrice: 48.0
+      QuantityReceived: 10.0
+      QuantityInvoiced: 10.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S01
+      RequisitionID: null
+      VendorID: 2029
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-02-15'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 480.0
+      Notes: null
+      CreatedAt: '2024-02-15T09:00:00'
+      UpdatedAt: '2024-03-05T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S01
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      Email: null
+      Phone: null
+      Address: null
+      City: Austin
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S01
+      ItemName: Widget Alpha
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240301
+      FullDate: '2024-03-01'
+      DayName: Friday
+      DayOfWeek: 6
+      DayOfMonth: 1
+      DayOfYear: 61
+      WeekOfYear: 9
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240305
+      FullDate: '2024-03-05'
+      DayName: Tuesday
+      DayOfWeek: 3
+      DayOfMonth: 5
+      DayOfYear: 65
+      WeekOfYear: 10
+      MonthNumber: 3
+      MonthName: March
+      MonthShort: Mar
+      CalendarQuarter: 1
+      CalendarQuarterName: Q1
+      CalendarYear: 2024
+      CalendarYearMonth: 202403
+      FiscalYear: 2024
+      FiscalQuarter: 1
+      FiscalMonth: 3
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240404
+      FullDate: '2024-04-04'
+      DayName: Thursday
+      DayOfWeek: 5
+      DayOfMonth: 4
+      DayOfYear: 95
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S01
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      City: Austin
+      Country: United States
+      TaxID: 82-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S01
+      ProductName: Widget Alpha
+      Description: Standard widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+- name: test_match_status_pending_not_matched
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S02
+      InternalInvoiceRef: TST-AP-S02
+      VendorID: 2030
+      POID: 8
+      InvoiceDate: '2024-04-01'
+      ReceivedDate: '2024-04-03'
+      InvoiceStatus: Pending
+      MatchStatus: Pending
+      TotalAmountClaimed: 200.0
+      TotalApprovedAmount: null
+      Notes: null
+      CreatedAt: '2024-04-01T08:00:00'
+      UpdatedAt: '2024-04-03T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 6
+      LineNumber: 1
+      POLineID: 9
+      ItemID: 3030
+      QuantityBilled: 4.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 8
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3030
+      Quantity: 4.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 4.0
+      QuantityInvoiced: 4.0
+      LineStatus: Open
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S02
+      RequisitionID: null
+      VendorID: 2030
+      OrderedByID: 5
+      ApprovedByID: null
+      CostCenterID: 100
+      PODate: '2024-03-20'
+      ExpectedDelivery: null
+      POStatus: Open
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-03-20T09:00:00'
+      UpdatedAt: '2024-04-03T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S02
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      Email: null
+      Phone: null
+      Address: null
+      City: Austin
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S02
+      ItemName: Widget Beta
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240401
+      FullDate: '2024-04-01'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 1
+      DayOfYear: 92
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240403
+      FullDate: '2024-04-03'
+      DayName: Wednesday
+      DayOfWeek: 4
+      DayOfMonth: 3
+      DayOfYear: 94
+      WeekOfYear: 14
+      MonthNumber: 4
+      MonthName: April
+      MonthShort: Apr
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202404
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 4
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240501
+      FullDate: '2024-05-01'
+      DayName: Wednesday
+      DayOfWeek: 4
+      DayOfMonth: 1
+      DayOfYear: 122
+      WeekOfYear: 18
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S02
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      City: Austin
+      Country: United States
+      TaxID: 82-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S02
+      ProductName: Widget Beta
+      Description: Beta widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+- name: test_invoice_status_disputed
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S03
+      InternalInvoiceRef: TST-AP-S03
+      VendorID: 2031
+      POID: 9
+      InvoiceDate: '2024-05-10'
+      ReceivedDate: '2024-05-12'
+      InvoiceStatus: Disputed
+      MatchStatus: Mismatched
+      TotalAmountClaimed: 300.0
+      TotalApprovedAmount: null
+      Notes: Price discrepancy
+      CreatedAt: '2024-05-10T08:00:00'
+      UpdatedAt: '2024-05-12T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 7
+      LineNumber: 1
+      POLineID: 10
+      ItemID: 3031
+      QuantityBilled: 5.0
+      InvoicedUnitPrice: 60.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 9
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3031
+      Quantity: 5.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 5.0
+      QuantityInvoiced: 5.0
+      LineStatus: Disputed
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S03
+      RequisitionID: null
+      VendorID: 2031
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-04-20'
+      ExpectedDelivery: null
+      POStatus: Disputed
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 250.0
+      Notes: null
+      CreatedAt: '2024-04-20T09:00:00'
+      UpdatedAt: '2024-05-12T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S03
+      VendorName: Global Office Supplies
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Chicago
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S03
+      ItemName: Widget Gamma
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240510
+      FullDate: '2024-05-10'
+      DayName: Friday
+      DayOfWeek: 6
+      DayOfMonth: 10
+      DayOfYear: 131
+      WeekOfYear: 19
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240512
+      FullDate: '2024-05-12'
+      DayName: Sunday
+      DayOfWeek: 1
+      DayOfMonth: 12
+      DayOfYear: 133
+      WeekOfYear: 19
+      MonthNumber: 5
+      MonthName: May
+      MonthShort: May
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202405
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 5
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240611
+      FullDate: '2024-06-11'
+      DayName: Tuesday
+      DayOfWeek: 3
+      DayOfMonth: 11
+      DayOfYear: 163
+      WeekOfYear: 24
+      MonthNumber: 6
+      MonthName: June
+      MonthShort: Jun
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202406
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 6
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S03
+      VendorName: Global Office Supplies
+      ContactName: Priya Sharma
+      City: Chicago
+      Country: United States
+      TaxID: 74-9876543
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S03
+      ProductName: Widget Gamma
+      Description: Gamma widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:00'
+- name: test_invoice_status_paid
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S04
+      InternalInvoiceRef: TST-AP-S04
+      VendorID: 2032
+      POID: 10
+      InvoiceDate: '2024-06-01'
+      ReceivedDate: '2024-06-03'
+      InvoiceStatus: Paid
+      MatchStatus: Matched
+      TotalAmountClaimed: 1000.0
+      TotalApprovedAmount: 1000.0
+      Notes: null
+      CreatedAt: '2024-06-01T08:00:00'
+      UpdatedAt: '2024-07-01T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 8
+      LineNumber: 1
+      POLineID: 11
+      ItemID: 3032
+      QuantityBilled: 20.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 10
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3032
+      Quantity: 20.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 20.0
+      QuantityInvoiced: 20.0
+      LineStatus: Closed
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S04
+      RequisitionID: null
+      VendorID: 2032
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 101
+      PODate: '2024-05-15'
+      ExpectedDelivery: null
+      POStatus: Closed
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 1000.0
+      Notes: null
+      CreatedAt: '2024-05-15T09:00:00'
+      UpdatedAt: '2024-07-01T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S04
+      VendorName: Rapid Hardware Ltd.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Detroit
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S04
+      ItemName: Widget Delta
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240601
+      FullDate: '2024-06-01'
+      DayName: Saturday
+      DayOfWeek: 7
+      DayOfMonth: 1
+      DayOfYear: 153
+      WeekOfYear: 22
+      MonthNumber: 6
+      MonthName: June
+      MonthShort: Jun
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202406
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 6
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240603
+      FullDate: '2024-06-03'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 3
+      DayOfYear: 155
+      WeekOfYear: 23
+      MonthNumber: 6
+      MonthName: June
+      MonthShort: Jun
+      CalendarQuarter: 2
+      CalendarQuarterName: Q2
+      CalendarYear: 2024
+      CalendarYearMonth: 202406
+      FiscalYear: 2024
+      FiscalQuarter: 2
+      FiscalMonth: 6
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240703
+      FullDate: '2024-07-03'
+      DayName: Wednesday
+      DayOfWeek: 4
+      DayOfMonth: 3
+      DayOfYear: 185
+      WeekOfYear: 27
+      MonthNumber: 7
+      MonthName: July
+      MonthShort: Jul
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202407
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 7
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S04
+      VendorName: Rapid Hardware Ltd.
+      ContactName: Tom Ferguson
+      City: Detroit
+      Country: United States
+      TaxID: 55-1122334
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S04
+      ProductName: Widget Delta
+      Description: Delta widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+- name: test_price_variance_over_po
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S05
+      InternalInvoiceRef: TST-AP-S05
+      VendorID: 2033
+      POID: 11
+      InvoiceDate: '2024-07-01'
+      ReceivedDate: '2024-07-04'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 750.0
+      TotalApprovedAmount: 750.0
+      Notes: null
+      CreatedAt: '2024-07-01T08:00:00'
+      UpdatedAt: '2024-07-04T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 9
+      LineNumber: 1
+      POLineID: 12
+      ItemID: 3033
+      QuantityBilled: 15.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 11
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3033
+      Quantity: 15.0
+      AgreedUnitPrice: 40.0
+      QuantityReceived: 15.0
+      QuantityInvoiced: 15.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S05
+      RequisitionID: null
+      VendorID: 2033
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 102
+      PODate: '2024-06-15'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 600.0
+      Notes: null
+      CreatedAt: '2024-06-15T09:00:00'
+      UpdatedAt: '2024-07-04T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S05
+      VendorName: Networx Systems Corp.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: San Jose
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET60
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S05
+      ItemName: Widget Epsilon
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Electronics
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240701
+      FullDate: '2024-07-01'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 1
+      DayOfYear: 183
+      WeekOfYear: 27
+      MonthNumber: 7
+      MonthName: July
+      MonthShort: Jul
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202407
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 7
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240704
+      FullDate: '2024-07-04'
+      DayName: Thursday
+      DayOfWeek: 5
+      DayOfMonth: 4
+      DayOfYear: 186
+      WeekOfYear: 27
+      MonthNumber: 7
+      MonthName: July
+      MonthShort: Jul
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202407
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 7
+      IsWeekend: 0
+      IsHoliday: 1
+      HolidayName: Independence Day
+    - Date_SK: 20240803
+      FullDate: '2024-08-03'
+      DayName: Saturday
+      DayOfWeek: 7
+      DayOfMonth: 3
+      DayOfYear: 216
+      WeekOfYear: 31
+      MonthNumber: 8
+      MonthName: August
+      MonthShort: Aug
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202408
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 8
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S05
+      VendorName: Networx Systems Corp.
+      ContactName: Elena Volkov
+      City: San Jose
+      Country: United States
+      TaxID: 91-5544332
+      PaymentTerms: NET60
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S05
+      ProductName: Widget Epsilon
+      Description: Epsilon widget
+      UnitOfMeasure: EA
+      Category: Electronics
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+- name: test_po_price_zero_pct_null
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S06
+      InternalInvoiceRef: TST-AP-S06
+      VendorID: 2034
+      POID: 12
+      InvoiceDate: '2024-08-01'
+      ReceivedDate: '2024-08-02'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 50.0
+      TotalApprovedAmount: 50.0
+      Notes: Zero-cost PO line
+      CreatedAt: '2024-08-01T08:00:00'
+      UpdatedAt: '2024-08-02T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 10
+      LineNumber: 1
+      POLineID: 13
+      ItemID: 3034
+      QuantityBilled: 1.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 12
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3034
+      Quantity: 1.0
+      AgreedUnitPrice: 0.0
+      QuantityReceived: 1.0
+      QuantityInvoiced: 1.0
+      LineStatus: Invoiced
+      Notes: Donated goods
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S06
+      RequisitionID: null
+      VendorID: 2034
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-07-20'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 0.0
+      Notes: null
+      CreatedAt: '2024-07-20T09:00:00'
+      UpdatedAt: '2024-08-02T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S06
+      VendorName: TechEdge Solutions Inc.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Austin
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S06
+      ItemName: Widget Alpha
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240801
+      FullDate: '2024-08-01'
+      DayName: Thursday
+      DayOfWeek: 5
+      DayOfMonth: 1
+      DayOfYear: 214
+      WeekOfYear: 31
+      MonthNumber: 8
+      MonthName: August
+      MonthShort: Aug
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202408
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 8
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240802
+      FullDate: '2024-08-02'
+      DayName: Friday
+      DayOfWeek: 6
+      DayOfMonth: 2
+      DayOfYear: 215
+      WeekOfYear: 31
+      MonthNumber: 8
+      MonthName: August
+      MonthShort: Aug
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202408
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 8
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240901
+      FullDate: '2024-09-01'
+      DayName: Sunday
+      DayOfWeek: 1
+      DayOfMonth: 1
+      DayOfYear: 245
+      WeekOfYear: 36
+      MonthNumber: 9
+      MonthName: September
+      MonthShort: Sep
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202409
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 9
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S06
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      City: Austin
+      Country: United States
+      TaxID: 82-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S06
+      ProductName: Widget Alpha
+      Description: Standard widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:01'
+- name: test_vendor_not_in_dim_vendor
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S07
+      InternalInvoiceRef: TST-AP-S07
+      VendorID: 2035
+      POID: 13
+      InvoiceDate: '2024-09-01'
+      ReceivedDate: '2024-09-03'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 200.0
+      TotalApprovedAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-09-01T08:00:00'
+      UpdatedAt: '2024-09-03T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 11
+      LineNumber: 1
+      POLineID: 14
+      ItemID: 3035
+      QuantityBilled: 4.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 13
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3035
+      Quantity: 4.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 4.0
+      QuantityInvoiced: 4.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S07
+      RequisitionID: null
+      VendorID: 2035
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-08-15'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 200.0
+      Notes: null
+      CreatedAt: '2024-08-15T09:00:00'
+      UpdatedAt: '2024-09-03T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-NONDIM
+      VendorName: Unknown Vendor LLC
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Nowhere
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2024-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S07
+      ItemName: Widget Alpha
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20240901
+      FullDate: '2024-09-01'
+      DayName: Sunday
+      DayOfWeek: 1
+      DayOfMonth: 1
+      DayOfYear: 245
+      WeekOfYear: 36
+      MonthNumber: 9
+      MonthName: September
+      MonthShort: Sep
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202409
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 9
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20240903
+      FullDate: '2024-09-03'
+      DayName: Tuesday
+      DayOfWeek: 3
+      DayOfMonth: 3
+      DayOfYear: 247
+      WeekOfYear: 36
+      MonthNumber: 9
+      MonthName: September
+      MonthShort: Sep
+      CalendarQuarter: 3
+      CalendarQuarterName: Q3
+      CalendarYear: 2024
+      CalendarYearMonth: 202409
+      FiscalYear: 2024
+      FiscalQuarter: 3
+      FiscalMonth: 9
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20241003
+      FullDate: '2024-10-03'
+      DayName: Thursday
+      DayOfWeek: 5
+      DayOfMonth: 3
+      DayOfYear: 277
+      WeekOfYear: 40
+      MonthNumber: 10
+      MonthName: October
+      MonthShort: Oct
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202410
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 10
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows: []
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S07
+      ProductName: Widget Alpha
+      Description: Standard widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+- name: test_vendor_dim_iscurrent_zero_miss
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S08
+      InternalInvoiceRef: TST-AP-S08
+      VendorID: 2036
+      POID: 14
+      InvoiceDate: '2024-10-01'
+      ReceivedDate: '2024-10-03'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 300.0
+      TotalApprovedAmount: 300.0
+      Notes: null
+      CreatedAt: '2024-10-01T08:00:00'
+      UpdatedAt: '2024-10-03T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 12
+      LineNumber: 1
+      POLineID: 15
+      ItemID: 3036
+      QuantityBilled: 6.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 14
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3036
+      Quantity: 6.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 6.0
+      QuantityInvoiced: 6.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S08
+      RequisitionID: null
+      VendorID: 2036
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-09-15'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 300.0
+      Notes: null
+      CreatedAt: '2024-09-15T09:00:00'
+      UpdatedAt: '2024-10-03T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-EXPI
+      VendorName: Expired Vendor Co.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Oldtown
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Inactive
+      CreatedAt: '2020-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S08
+      ItemName: Widget Zeta
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20241001
+      FullDate: '2024-10-01'
+      DayName: Tuesday
+      DayOfWeek: 3
+      DayOfMonth: 1
+      DayOfYear: 275
+      WeekOfYear: 40
+      MonthNumber: 10
+      MonthName: October
+      MonthShort: Oct
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202410
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 10
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20241003
+      FullDate: '2024-10-03'
+      DayName: Thursday
+      DayOfWeek: 5
+      DayOfMonth: 3
+      DayOfYear: 277
+      WeekOfYear: 40
+      MonthNumber: 10
+      MonthName: October
+      MonthShort: Oct
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202410
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 10
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20241102
+      FullDate: '2024-11-02'
+      DayName: Saturday
+      DayOfWeek: 7
+      DayOfMonth: 2
+      DayOfYear: 307
+      WeekOfYear: 44
+      MonthNumber: 11
+      MonthName: November
+      MonthShort: Nov
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202411
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 11
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-EXPI
+      VendorName: Expired Vendor Co.
+      ContactName: Old Contact
+      City: Oldtown
+      Country: United States
+      TaxID: 00-0000000
+      PaymentTerms: NET30
+      VendorStatus: Inactive
+      EffectiveStart: '2020-01-01'
+      EffectiveEnd: '2023-12-31'
+      IsCurrent: 0
+      DW_InsertDate: '2020-01-01T00:00:00'
+      DW_UpdateDate: '2024-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S08
+      ProductName: Widget Zeta
+      Description: Zeta widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+- name: test_product_not_in_dim_product
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S09
+      InternalInvoiceRef: TST-AP-S09
+      VendorID: 2037
+      POID: 15
+      InvoiceDate: '2024-11-01'
+      ReceivedDate: '2024-11-02'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 300.0
+      TotalApprovedAmount: 300.0
+      Notes: null
+      CreatedAt: '2024-11-01T08:00:00'
+      UpdatedAt: '2024-11-02T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 13
+      LineNumber: 1
+      POLineID: 16
+      ItemID: 3037
+      QuantityBilled: 6.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 15
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3037
+      Quantity: 6.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 6.0
+      QuantityInvoiced: 6.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S09
+      RequisitionID: null
+      VendorID: 2037
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '2024-10-15'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 300.0
+      Notes: null
+      CreatedAt: '2024-10-15T09:00:00'
+      UpdatedAt: '2024-11-02T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S09
+      VendorName: TechEdge Solutions Inc.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Austin
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-NOPROD
+      ItemName: Unregistered Item
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Misc
+      AccountingType: Indirect
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2024-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows:
+    - Date_SK: 20241101
+      FullDate: '2024-11-01'
+      DayName: Friday
+      DayOfWeek: 6
+      DayOfMonth: 1
+      DayOfYear: 306
+      WeekOfYear: 44
+      MonthNumber: 11
+      MonthName: November
+      MonthShort: Nov
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202411
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 11
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20241102
+      FullDate: '2024-11-02'
+      DayName: Saturday
+      DayOfWeek: 7
+      DayOfMonth: 2
+      DayOfYear: 307
+      WeekOfYear: 44
+      MonthNumber: 11
+      MonthName: November
+      MonthShort: Nov
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202411
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 11
+      IsWeekend: 1
+      IsHoliday: 0
+      HolidayName: null
+    - Date_SK: 20241202
+      FullDate: '2024-12-02'
+      DayName: Monday
+      DayOfWeek: 2
+      DayOfMonth: 2
+      DayOfYear: 337
+      WeekOfYear: 49
+      MonthNumber: 12
+      MonthName: December
+      MonthShort: Dec
+      CalendarQuarter: 4
+      CalendarQuarterName: Q4
+      CalendarYear: 2024
+      CalendarYearMonth: 202412
+      FiscalYear: 2024
+      FiscalQuarter: 4
+      FiscalMonth: 12
+      IsWeekend: 0
+      IsHoliday: 0
+      HolidayName: null
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S09
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      City: Austin
+      Country: United States
+      TaxID: 82-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows: []
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:02'
+- name: test_invoice_date_not_in_dim_date
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows:
+    - InvoiceNumber: TST-INV-S10
+      InternalInvoiceRef: TST-AP-S10
+      VendorID: 2038
+      POID: 16
+      InvoiceDate: '1999-12-31'
+      ReceivedDate: '2000-01-04'
+      InvoiceStatus: Approved
+      MatchStatus: Matched
+      TotalAmountClaimed: 100.0
+      TotalApprovedAmount: 100.0
+      Notes: Historic invoice - dates not in Dim_Date
+      CreatedAt: '1999-12-31T08:00:00'
+      UpdatedAt: '2000-01-04T10:00:00'
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows:
+    - InvoiceID: 14
+      LineNumber: 1
+      POLineID: 17
+      ItemID: 3038
+      QuantityBilled: 2.0
+      InvoicedUnitPrice: 50.0
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows:
+    - POID: 16
+      LineNumber: 1
+      RequisitionLineID: null
+      ItemID: 3038
+      Quantity: 2.0
+      AgreedUnitPrice: 50.0
+      QuantityReceived: 2.0
+      QuantityInvoiced: 2.0
+      LineStatus: Invoiced
+      Notes: null
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows:
+    - PONumber: TST-PO-S10
+      RequisitionID: null
+      VendorID: 2038
+      OrderedByID: 5
+      ApprovedByID: 6
+      CostCenterID: 100
+      PODate: '1999-12-01'
+      ExpectedDelivery: null
+      POStatus: Invoiced
+      PaymentTerms: NET30
+      ShippingAddress: null
+      TotalAmount: 100.0
+      Notes: null
+      CreatedAt: '1999-12-01T09:00:00'
+      UpdatedAt: '2000-01-04T10:00:00'
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows:
+    - VendorCode: TST-VND-S10
+      VendorName: TechEdge Solutions Inc.
+      ContactName: null
+      Email: null
+      Phone: null
+      Address: null
+      City: Austin
+      Country: United States
+      TaxID: null
+      PaymentTerms: NET30
+      VendorStatus: Active
+      CreatedAt: '2023-01-01T00:00:00'
+  - input: '[PTP_System].[Master].[Items]'
+    rows:
+    - ItemCode: TST-ITM-S10
+      ItemName: Widget Alpha
+      Description: null
+      UnitOfMeasure: EA
+      ItemCategory: Hardware
+      AccountingType: Direct
+      GLAccount: null
+      IsActive: 1
+      CreatedAt: '2022-01-01T00:00:00'
+  - input: source('dbo', 'Dim_Date')
+    rows: []
+  - input: source('dbo', 'Dim_Vendor')
+    rows:
+    - Vendor_BK: TST-VND-S10
+      VendorName: TechEdge Solutions Inc.
+      ContactName: Alex Turner
+      City: Austin
+      Country: United States
+      TaxID: 82-1234567
+      PaymentTerms: NET30
+      VendorStatus: Active
+      EffectiveStart: '2023-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2023-01-01T00:00:00'
+      DW_UpdateDate: '2023-01-01T00:00:00'
+      SourceRowHash: null
+  - input: source('dbo', 'Dim_Product')
+    rows:
+    - Product_BK: TST-ITM-S10
+      ProductName: Widget Alpha
+      Description: Standard widget
+      UnitOfMeasure: EA
+      Category: Hardware
+      AccountingType: Direct
+      GLAccount: '00000'
+      EffectiveStart: '2022-01-01'
+      EffectiveEnd: '9999-12-31'
+      IsCurrent: 1
+      DW_InsertDate: '2022-01-01T00:00:00'
+      SourceRowHash: null
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+- name: test_empty_source_no_rows_inserted
+  model: stg_fact_ap_invoice
+  given:
+  - input: '[PTP_System].[Finance].[Invoices]'
+    rows: []
+  - input: '[PTP_System].[Finance].[InvoiceLines]'
+    rows: []
+  - input: '[PTP_System].[Purchasing].[PurchaseOrderLines]'
+    rows: []
+  - input: '[PTP_System].[Purchasing].[PurchaseOrders]'
+    rows: []
+  - input: '[PTP_System].[Master].[Vendors]'
+    rows: []
+  - input: '[PTP_System].[Master].[Items]'
+    rows: []
+  - input: source('dbo', 'Dim_Date')
+    rows: []
+  - input: source('dbo', 'Dim_Vendor')
+    rows: []
+  - input: source('dbo', 'Dim_Product')
+    rows: []
+  expect:
+    rows:
+    - Fact_Invoice_SK: 1
+      Invoice_BK: APINV-2026-0001
+      Vendor_Invoice_Number: TE-INV-2026-441
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0001
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '1225.0000'
+      PO_Unit_Price: '1225.0000'
+      Invoice_Line_Total: '12250.00'
+      PO_Line_Amount: '12250.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 2
+      Invoice_BK: APINV-2026-0002
+      Vendor_Invoice_Number: NWX-INV-2026-1177
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0003
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '10.000'
+      Invoiced_Unit_Price: '575.0000'
+      PO_Unit_Price: '499.0000'
+      Invoice_Line_Total: '5750.00'
+      PO_Line_Amount: '4990.00'
+      Price_Variance: '760.00'
+      Price_Variance_Pct: '15.2305'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 3
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '2.000'
+      Invoiced_Unit_Price: '430.0000'
+      PO_Unit_Price: '430.0000'
+      Invoice_Line_Total: '860.00'
+      PO_Line_Amount: '860.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 4
+      Invoice_BK: APINV-2026-0003
+      Vendor_Invoice_Number: GOS-INV-2026-8890
+      Invoice_Line_Number: 2
+      PO_BK: PO-2026-0004
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Paid
+      Match_Status: Matched
+      Is_Match_Passed: true
+      Is_Disputed: false
+      Is_Paid: true
+      Quantity_Billed: '50.000'
+      Invoiced_Unit_Price: '11.1000'
+      PO_Unit_Price: '11.1000'
+      Invoice_Line_Total: '555.00'
+      PO_Line_Amount: '555.00'
+      Price_Variance: '0.00'
+      Price_Variance_Pct: '0.0000'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
+    - Fact_Invoice_SK: 5
+      Invoice_BK: APINV-2026-0004
+      Vendor_Invoice_Number: GOS-INV-2026-9914
+      Invoice_Line_Number: 1
+      PO_BK: PO-2026-0006
+      InvoiceDate_SK: 0
+      ReceivedDate_SK: 0
+      DueDate_SK: 0
+      Vendor_SK: -1
+      Product_SK: -1
+      Invoice_Status: Disputed
+      Match_Status: Failed
+      Is_Match_Passed: false
+      Is_Disputed: true
+      Is_Paid: false
+      Quantity_Billed: '20.000'
+      Invoiced_Unit_Price: '12.7500'
+      PO_Unit_Price: '10.5000'
+      Invoice_Line_Total: '255.00'
+      PO_Line_Amount: '210.00'
+      Price_Variance: '45.00'
+      Price_Variance_Pct: '21.4286'
+      Days_Until_Due: 31
+      Days_Invoice_To_Receive: 1
+      DW_Load_DateTime: '2026-04-07 06:06:03'
